@@ -19,7 +19,6 @@
 #define STATUS_CAP_Y 16
 #define STATUS_ICON_Y 17
 #define STATUS_ICON_X 11
-#define STATUS_ICON_GAP 4  // between the quiet-time and disconnected icons
 #define BATTERY_INSET 33  // 25px body ends 8px from the right, nub hangs past it
 #define SEPARATOR_Y 46
 #define DATE_CAP_Y 50
@@ -46,7 +45,6 @@
 #define STATUS_CAP_Y 11
 #define STATUS_ICON_Y 12  // 9px icons centered on the 34px status row
 #define STATUS_ICON_X 8
-#define STATUS_ICON_GAP 3  // between the quiet-time and disconnected icons
 #define BATTERY_INSET 24  // 18px body ends 6px from the right, nub hangs past it
 #define SEPARATOR_Y 33
 #define DATE_CAP_Y 36
@@ -163,14 +161,13 @@ static void prv_draw_status(GContext *ctx, const struct tm *t) {
   }
 #endif
 
-  canvas_draw_icon(ctx, prv_quiet_time() ? ICON_QUIET_ON : ICON_QUIET_OFF, STATUS_ICON_X,
-                   STATUS_ICON_Y);
-  if (!s_connected) {
-    // Second top-left icon, only while the phone is disconnected.
-    canvas_draw_icon(ctx, ICON_DISCONNECTED,
-                     STATUS_ICON_X + ASSET_ICON_ENTRIES[ICON_QUIET_OFF].w + STATUS_ICON_GAP,
-                     STATUS_ICON_Y);
+  // One top-left icon: disconnected while the phone is away, otherwise the
+  // quiet-time state.
+  int status_icon = ICON_DISCONNECTED;
+  if (s_connected) {
+    status_icon = prv_quiet_time() ? ICON_QUIET_ON : ICON_QUIET_OFF;
   }
+  canvas_draw_icon(ctx, status_icon, STATUS_ICON_X, STATUS_ICON_Y);
 
   char buf[LABEL_BUF_SIZE];
   format_clock(buf, t->tm_hour, t->tm_min, prv_is_24h());

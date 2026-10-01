@@ -102,18 +102,25 @@ no pixels are ever rotated.
 
 | Row | Content |
 |---|---|
-| Status | quiet-time icon (+ disconnected icon) · time (follows the 12h/24h setting) · battery |
+| Status | connection / quiet-time icon · time (follows the 12h/24h setting) · battery |
 | Date | `M/D` · two-letter weekday |
 | Spoken time | hour word / minute word / AM-PM (always 12-hour) |
 | Progress | bar + labels |
 
-While the phone is disconnected, a second top-left icon appears next to the
-quiet-time one: a Bluetooth rune with an X, drawn like the quiet-time X
-(`connection_service`, redrawn on change). It is in every icon sheet (both
-orientations, base and large, and tinted with the white halo in the color
-theme, where the rune's small enclosed gaps are filled white too).
+The top-left icon shows one of three states: while the phone is
+disconnected, a Bluetooth rune with an X (drawn like the quiet-time X);
+while connected, the quiet-time speaker, with an X when quiet time is on.
+The connection comes from `connection_service` (peeked at start, redrawn on
+change). The disconnected icon is in every icon sheet (both orientations,
+base and large, and tinted with the white halo in the color theme, where
+the rune's small enclosed gaps are filled white too).
 
 ![Disconnected icon on every platform and theme](docs/screenshots/disconnected/all_disconnected.png)
+
+The three states in the color theme on Pebble Time 2: disconnected, quiet
+time, sound on:
+
+![Disconnected / quiet time / sound on](docs/screenshots/disconnected/three_states_color.png)
 
 Settings (Clay): orientation (portrait/landscape), theme (color screens
 only), what the bar measures (minute/hour), and what the labels show
@@ -155,8 +162,8 @@ and text ink keeps an 8px margin on both sides. W×H is the canvas: 144×168
 portrait, 168×144 landscape.
 
 - Status row 0–32: text cap at y=11, centered on W/2; icons at y=12; speaker
-  x=8, disconnected icon 3px to its right (x=24); battery body from W−24 to
-  W−7 (nub 2px past it); separator line at
+  x=8 (the connection / quiet-time icon); battery body from W−24 to W−7 (nub
+  2px past it); separator line at
   y=33.
 - Date row: cap at y=36.
 - Spoken time, centered on W/2: the block (hour cap top to AM/PM baseline,
