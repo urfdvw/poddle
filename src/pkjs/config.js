@@ -8,6 +8,25 @@ module.exports = [
     items: [
       {
         type: 'heading',
+        defaultValue: 'Display'
+      },
+      {
+        type: 'select',
+        messageKey: 'Orientation',
+        label: 'Orientation',
+        defaultValue: '0',
+        options: [
+          { label: 'Portrait', value: '0' },
+          { label: 'Landscape', value: '1' }
+        ]
+      }
+    ]
+  },
+  {
+    type: 'section',
+    items: [
+      {
+        type: 'heading',
         defaultValue: 'Progress bar'
       },
       {

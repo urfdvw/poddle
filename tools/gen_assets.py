@@ -11,13 +11,16 @@ sprite sheet:
   C  words.png     spoken-time vocabulary + AM/PM
   -  icons.png     quiet-time on/off speaker, battery outline
 
-It also writes src/c/assets.h describing where each entry lives in its sheet.
+Each sheet is also written upright as NAME_portrait.png (the rotated sheet
+rotated back) for the portrait orientation, which draws the same entries
+without any rotation. src/c/assets.h describes where each entry lives.
 
 Coordinates: the design canvas is 168x144 (landscape). Rotating it 90 degrees
 clockwise gives the physical 144x168 screen, so canvas (x, y) lands on
 physical (143 - y, x). Within a sheet, entries are stacked along physical y
 (= canvas x), so a text entry of canvas size adv x band_h occupies the
-physical sub-rect (0, py, band_h, adv).
+physical sub-rect (0, py, band_h, adv). In the portrait sheet, whose height
+is the rotated sheet's width W, the same entry sits at (py, W - px - h, w, h).
 
 Usage: python3 tools/gen_assets.py   (run from the repo root)
 """
@@ -116,6 +119,12 @@ def ink_rows(img):
     return box
 
 
+def save_sheet(sheet, name):
+    sheet.save(os.path.join(IMG_DIR, name + ".png"), optimize=True)
+    sheet.transpose(Image.Transpose.ROTATE_90).save(
+        os.path.join(IMG_DIR, name + "_portrait.png"), optimize=True)
+
+
 def build_text_sheet(name, items, tracking_for=None):
     """items: list of (c_name, text). Returns sheet metadata."""
     rendered = []
@@ -152,7 +161,7 @@ def build_text_sheet(name, items, tracking_for=None):
     for s in strips:
         sheet.paste(s, (0, y))
         y += s.height
-    sheet.save(os.path.join(IMG_DIR, name + ".png"), optimize=True)
+    save_sheet(sheet, name)
     return {"name": name, "band_h": band_h, "cap_offset": CAP_TOP - top,
             "entries": entries, "canvas_strips": canvas_strips}
 
@@ -178,7 +187,7 @@ def build_icon_sheet():
     for s in strips:
         sheet.paste(s, (0, y))
         y += s.height
-    sheet.save(os.path.join(IMG_DIR, "icons.png"), optimize=True)
+    save_sheet(sheet, "icons")
     return {"name": "icons", "entries": entries}
 
 
@@ -328,9 +337,10 @@ def main():
                 for k, v in sheets.items()}
     with open(os.path.join(IMG_DIR, "sheets.json"), "w") as f:
         json.dump(manifest, f, indent=1)
-    total = sum(os.path.getsize(os.path.join(IMG_DIR, n + ".png"))
-                for n in ("digits", "weekdays", "words", "icons"))
-    print(f"wrote 4 sheets ({total} bytes PNG) and {os.path.relpath(HEADER, ROOT)}")
+    total = sum(os.path.getsize(os.path.join(IMG_DIR, n + sfx + ".png"))
+                for n in ("digits", "weekdays", "words", "icons") for sfx in ("", "_portrait"))
+    print(f"wrote 4 sheets x 2 orientations ({total} bytes PNG) and "
+          f"{os.path.relpath(HEADER, ROOT)}")
 
 
 if __name__ == "__main__":

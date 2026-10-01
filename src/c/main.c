@@ -5,27 +5,35 @@
 #include "labels.h"
 #include "time_words.h"
 
-// Layout on the 168x144 design canvas (y values are cap tops for text).
-#define MARGIN_TEXT 8  // text ink starts at x=8 and ends before x=160
-#define CENTER_X (CANVAS_W / 2)
+// Layout on the design canvas (y values are cap tops for text). Rows above
+// the spoken time hang from the top, the progress row from the bottom;
+// x positions follow the canvas width. Values measured off the mockup:
+// Frames 1-2 for portrait, Frame 3 for landscape.
+#define MARGIN_TEXT 8  // text ink keeps 8px from either edge
 
 #define STATUS_CAP_Y 11
 #define STATUS_ICON_Y 12  // 9px icons centered on the 34px status row
 #define STATUS_ICON_X 8
-#define BATTERY_X 144  // 18px body ends at x=161, nub hangs past it
+#define BATTERY_INSET 24  // 18px body ends 6px from the right, nub hangs past it
 #define SEPARATOR_Y 33
 
 #define DATE_CAP_Y 36
 
-#define HOUR_CAP_Y 57
-#define MINUTE_CAP_Y 76
-#define AMPM_CAP_Y 96
-
 #define TRACK_X 7
-#define TRACK_Y 116
-#define TRACK_W 154
+#define TRACK_INSET_BOTTOM 28
 #define TRACK_H 5
-#define PROGRESS_LABEL_CAP_Y 124
+#define LABEL_INSET_BOTTOM 20
+
+typedef struct {
+  int16_t hour_y;
+  int16_t minute_y;
+  int16_t ampm_y;
+} WordsLayout;
+
+static const WordsLayout WORDS_LAYOUT[2] = {
+  [ORIENTATION_PORTRAIT] = {69, 88, 108},
+  [ORIENTATION_LANDSCAPE] = {57, 76, 96},
+};
 
 // Battery fill area inside the BATTERY icon.
 #define BATTERY_FILL_DX 2
@@ -35,10 +43,12 @@
 
 #define PERSIST_KEY_PROGRESS_MODE 1
 #define PERSIST_KEY_LABEL_FORMAT 2
+#define PERSIST_KEY_ORIENTATION 3
 
 static Window *s_window;
 static ProgressMode s_progress_mode = PROGRESS_MODE_HOUR;
 static LabelFormat s_label_format = LABEL_FORMAT_ELAPSED;
+static Orientation s_orientation = ORIENTATION_PORTRAIT;
 static uint8_t s_battery_percent = 100;
 static TimeUnits s_tick_units;
 
@@ -90,14 +100,16 @@ static void prv_draw_status(GContext *ctx, const struct tm *t) {
 
   char buf[LABEL_BUF_SIZE];
   format_clock(buf, t->tm_hour, t->tm_min, prv_is_24h());
-  prv_draw_text(ctx, buf, CENTER_X, STATUS_CAP_Y, GAlignCenter);
+  const int w = canvas_width();
+  prv_draw_text(ctx, buf, w / 2, STATUS_CAP_Y, GAlignCenter);
 
-  canvas_draw_icon(ctx, ICON_BATTERY, BATTERY_X, STATUS_ICON_Y);
+  const int battery_x = w - BATTERY_INSET;
+  canvas_draw_icon(ctx, ICON_BATTERY, battery_x, STATUS_ICON_Y);
   int fill = (s_battery_percent * BATTERY_FILL_W + 50) / 100;
-  canvas_fill_rect(ctx, BATTERY_X + BATTERY_FILL_DX, STATUS_ICON_Y + BATTERY_FILL_DY, fill,
+  canvas_fill_rect(ctx, battery_x + BATTERY_FILL_DX, STATUS_ICON_Y + BATTERY_FILL_DY, fill,
                    BATTERY_FILL_H);
 
-  canvas_fill_rect(ctx, 0, SEPARATOR_Y, CANVAS_W, 1);
+  canvas_fill_rect(ctx, 0, SEPARATOR_Y, w, 1);
 }
 
 static void prv_draw_date(GContext *ctx, const struct tm *t) {
@@ -106,21 +118,23 @@ static void prv_draw_date(GContext *ctx, const struct tm *t) {
   prv_draw_text(ctx, buf, MARGIN_TEXT, DATE_CAP_Y, GAlignLeft);
 
   Glyph wday = {SHEET_WEEKDAYS, (uint8_t)(WDAY_SU + t->tm_wday)};
-  canvas_draw_right(ctx, &wday, 1, CANVAS_W - MARGIN_TEXT, DATE_CAP_Y);
+  canvas_draw_right(ctx, &wday, 1, canvas_width() - MARGIN_TEXT, DATE_CAP_Y);
 }
 
 static void prv_draw_words(GContext *ctx, const struct tm *t) {
   TwPhrase phrase;
   time_words(t->tm_hour, t->tm_min, &phrase);
 
+  const WordsLayout *layout = &WORDS_LAYOUT[s_orientation];
+  const int center_x = canvas_width() / 2;
   Glyph run[TW_MAX_TOKENS];
   int n = prv_line_glyphs(&phrase.hour, run);
-  canvas_draw_centered(ctx, run, n, CENTER_X, HOUR_CAP_Y);
+  canvas_draw_centered(ctx, run, n, center_x, layout->hour_y);
   n = prv_line_glyphs(&phrase.minute, run);
-  canvas_draw_centered(ctx, run, n, CENTER_X, MINUTE_CAP_Y);
+  canvas_draw_centered(ctx, run, n, center_x, layout->minute_y);
 
   Glyph ampm = {SHEET_WORDS, phrase.ampm};
-  canvas_draw_centered(ctx, &ampm, 1, CENTER_X, AMPM_CAP_Y);
+  canvas_draw_centered(ctx, &ampm, 1, center_x, layout->ampm_y);
 }
 
 static void prv_draw_progress(GContext *ctx, const struct tm *t) {
@@ -128,15 +142,21 @@ static void prv_draw_progress(GContext *ctx, const struct tm *t) {
   progress_info(s_progress_mode, s_label_format, t->tm_hour, t->tm_min, t->tm_sec,
                 prv_is_24h(), &info);
 
-  // Outline with clipped corners, then the fill over the left edge.
-  canvas_fill_rect(ctx, TRACK_X + 1, TRACK_Y, TRACK_W - 2, 1);
-  canvas_fill_rect(ctx, TRACK_X + 1, TRACK_Y + TRACK_H - 1, TRACK_W - 2, 1);
-  canvas_fill_rect(ctx, TRACK_X, TRACK_Y + 1, 1, TRACK_H - 2);
-  canvas_fill_rect(ctx, TRACK_X + TRACK_W - 1, TRACK_Y + 1, 1, TRACK_H - 2);
-  canvas_fill_rect(ctx, TRACK_X, TRACK_Y + 1, TRACK_W * info.num / info.den, TRACK_H - 2);
+  const int w = canvas_width();
+  const int h = canvas_height();
+  const int track_w = w - 2 * TRACK_X;
+  const int track_y = h - TRACK_INSET_BOTTOM;
+  const int label_y = h - LABEL_INSET_BOTTOM;
 
-  prv_draw_text(ctx, info.left, MARGIN_TEXT, PROGRESS_LABEL_CAP_Y, GAlignLeft);
-  prv_draw_text(ctx, info.right, CANVAS_W - MARGIN_TEXT, PROGRESS_LABEL_CAP_Y, GAlignRight);
+  // Outline with clipped corners, then the fill over the left edge.
+  canvas_fill_rect(ctx, TRACK_X + 1, track_y, track_w - 2, 1);
+  canvas_fill_rect(ctx, TRACK_X + 1, track_y + TRACK_H - 1, track_w - 2, 1);
+  canvas_fill_rect(ctx, TRACK_X, track_y + 1, 1, TRACK_H - 2);
+  canvas_fill_rect(ctx, TRACK_X + track_w - 1, track_y + 1, 1, TRACK_H - 2);
+  canvas_fill_rect(ctx, TRACK_X, track_y + 1, track_w * info.num / info.den, TRACK_H - 2);
+
+  prv_draw_text(ctx, info.left, MARGIN_TEXT, label_y, GAlignLeft);
+  prv_draw_text(ctx, info.right, w - MARGIN_TEXT, label_y, GAlignRight);
 }
 
 static void prv_update_proc(Layer *layer, GContext *ctx) {
@@ -207,6 +227,13 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
                                                                     : LABEL_FORMAT_ELAPSED;
     persist_write_int(PERSIST_KEY_LABEL_FORMAT, s_label_format);
   }
+  Tuple *orientation = dict_find(iter, MESSAGE_KEY_Orientation);
+  if (orientation) {
+    s_orientation = prv_tuple_int(orientation) == ORIENTATION_LANDSCAPE ? ORIENTATION_LANDSCAPE
+                                                                         : ORIENTATION_PORTRAIT;
+    persist_write_int(PERSIST_KEY_ORIENTATION, s_orientation);
+    canvas_init(s_orientation);
+  }
   prv_subscribe_ticks();
   layer_mark_dirty(window_get_root_layer(s_window));
 }
@@ -215,6 +242,7 @@ static void prv_load_settings(void) {
 #ifdef DEMO_PROGRESS_MODE
   s_progress_mode = DEMO_PROGRESS_MODE;
   s_label_format = DEMO_LABEL_FORMAT;
+  s_orientation = DEMO_ORIENTATION;
   return;
 #endif
   if (persist_exists(PERSIST_KEY_PROGRESS_MODE)) {
@@ -227,11 +255,16 @@ static void prv_load_settings(void) {
                          ? LABEL_FORMAT_SEGMENT
                          : LABEL_FORMAT_ELAPSED;
   }
+  if (persist_exists(PERSIST_KEY_ORIENTATION)) {
+    s_orientation = persist_read_int(PERSIST_KEY_ORIENTATION) == ORIENTATION_LANDSCAPE
+                        ? ORIENTATION_LANDSCAPE
+                        : ORIENTATION_PORTRAIT;
+  }
 }
 
 static void prv_init(void) {
   prv_load_settings();
-  canvas_init();
+  canvas_init(s_orientation);
 
   s_window = window_create();
   layer_set_update_proc(window_get_root_layer(s_window), prv_update_proc);

@@ -3,12 +3,23 @@
 #include "assets.h"
 
 static GBitmap *s_sheets[SHEET_COUNT];
+static int16_t s_sheet_h[SHEET_COUNT];  // portrait sheets: full height, before set_bounds
+static Orientation s_orientation = ORIENTATION_PORTRAIT;
+static bool s_loaded;
 
-static const uint32_t SHEET_RESOURCES[SHEET_COUNT] = {
-  RESOURCE_ID_SHEET_DIGITS,
-  RESOURCE_ID_SHEET_WEEKDAYS,
-  RESOURCE_ID_SHEET_WORDS,
-  RESOURCE_ID_SHEET_ICONS,
+static const uint32_t SHEET_RESOURCES[2][SHEET_COUNT] = {
+  [ORIENTATION_PORTRAIT] = {
+    RESOURCE_ID_SHEET_DIGITS_PORTRAIT,
+    RESOURCE_ID_SHEET_WEEKDAYS_PORTRAIT,
+    RESOURCE_ID_SHEET_WORDS_PORTRAIT,
+    RESOURCE_ID_SHEET_ICONS_PORTRAIT,
+  },
+  [ORIENTATION_LANDSCAPE] = {
+    RESOURCE_ID_SHEET_DIGITS,
+    RESOURCE_ID_SHEET_WEEKDAYS,
+    RESOURCE_ID_SHEET_WORDS,
+    RESOURCE_ID_SHEET_ICONS,
+  },
 };
 
 static const SheetEntry *const SHEET_ENTRIES[SHEET_COUNT] = {
@@ -25,21 +36,42 @@ static const int8_t SHEET_CAP_OFFSET[SHEET_COUNT] = {
   0,
 };
 
-void canvas_init(void) {
-  for (int i = 0; i < SHEET_COUNT; i++) {
-    s_sheets[i] = gbitmap_create_with_resource(SHEET_RESOURCES[i]);
+void canvas_init(Orientation orientation) {
+  if (s_loaded && orientation == s_orientation) {
+    return;
   }
+  canvas_deinit();
+  s_orientation = orientation;
+  for (int i = 0; i < SHEET_COUNT; i++) {
+    s_sheets[i] = gbitmap_create_with_resource(SHEET_RESOURCES[orientation][i]);
+    s_sheet_h[i] = s_sheets[i] ? gbitmap_get_bounds(s_sheets[i]).size.h : 0;
+  }
+  s_loaded = true;
 }
 
 void canvas_deinit(void) {
   for (int i = 0; i < SHEET_COUNT; i++) {
-    gbitmap_destroy(s_sheets[i]);
-    s_sheets[i] = NULL;
+    if (s_sheets[i]) {
+      gbitmap_destroy(s_sheets[i]);
+      s_sheets[i] = NULL;
+    }
   }
+  s_loaded = false;
+}
+
+int canvas_width(void) {
+  return s_orientation == ORIENTATION_LANDSCAPE ? SCREEN_H : SCREEN_W;
+}
+
+int canvas_height(void) {
+  return s_orientation == ORIENTATION_LANDSCAPE ? SCREEN_W : SCREEN_H;
 }
 
 GRect canvas_to_screen(GRect r) {
-  return GRect(CANVAS_H - r.origin.y - r.size.h, r.origin.x, r.size.h, r.size.w);
+  if (s_orientation == ORIENTATION_PORTRAIT) {
+    return r;
+  }
+  return GRect(SCREEN_W - r.origin.y - r.size.h, r.origin.x, r.size.h, r.size.w);
 }
 
 void canvas_fill_rect(GContext *ctx, int x, int y, int w, int h) {
@@ -54,8 +86,13 @@ static void prv_blit(GContext *ctx, int sheet, const SheetEntry *e, int x, int y
   if (!bmp) {
     return;
   }
-  // In the sheet the entry is stored rotated: h columns wide, w rows tall.
-  gbitmap_set_bounds(bmp, GRect(e->px, e->py, e->h, e->w));
+  if (s_orientation == ORIENTATION_LANDSCAPE) {
+    // Rotated sheet: the entry is h columns wide, w rows tall.
+    gbitmap_set_bounds(bmp, GRect(e->px, e->py, e->h, e->w));
+  } else {
+    // Upright sheet: the rotated sheet turned back, so its columns are rows.
+    gbitmap_set_bounds(bmp, GRect(e->py, s_sheet_h[sheet] - e->px - e->h, e->w, e->h));
+  }
   graphics_context_set_compositing_mode(ctx, GCompOpAnd);
   graphics_draw_bitmap_in_rect(ctx, bmp, canvas_to_screen(GRect(x, y, e->w, e->h)));
 }

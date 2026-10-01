@@ -24,7 +24,8 @@
     },
     "messageKeys": [
       "ProgressMode",
-      "LabelFormat"
+      "LabelFormat",
+      "Orientation"
     ],
     "resources": {
       "media": [
@@ -53,6 +54,34 @@
           "type": "bitmap",
           "name": "SHEET_ICONS",
           "file": "images/icons.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_DIGITS_PORTRAIT",
+          "file": "images/digits_portrait.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_WEEKDAYS_PORTRAIT",
+          "file": "images/weekdays_portrait.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_WORDS_PORTRAIT",
+          "file": "images/words_portrait.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_ICONS_PORTRAIT",
+          "file": "images/icons_portrait.png",
           "memoryFormat": "1Bit",
           "spaceOptimization": "memory"
         }

@@ -1,7 +1,8 @@
 # poddle
 
 The Pebble watch face that brings you back to 2004: an iPod mini-style layout
-(status bar, info area, progress bar), drawn landscape on a 144×168 B/W screen.
+(status bar, info area, progress bar) on a 144×168 B/W screen, in portrait
+(default) or landscape.
 
 Targets: **aplite** (Pebble / Pebble Steel), **diorite** (Pebble 2, Pebble 2 SE),
 **flint** (Pebble 2 Duo). No color or round platforms, and no emery/gabbro.
@@ -63,38 +64,53 @@ Things worth knowing about this path:
 
 ## The face
 
-![All states](docs/screenshots/all_states.png)
+Portrait (default) and landscape, switchable in the settings:
 
-Canvas 168×144, rotated 90° clockwise onto the 144×168 screen. Every glyph and
-icon is a pre-rotated bitmap from one of four sprite sheets, so at runtime the
-face only blits. The only coordinate step is `canvas_to_screen()`, which moves
-a rect's origin onto the screen; no pixels are ever rotated at runtime.
+![Portrait states](docs/screenshots/portrait/all_states.png)
+![Landscape states](docs/screenshots/landscape/all_states.png)
+
+Each orientation lays the face out on its own design canvas: 144×168 in
+portrait, 168×144 in landscape (rotated 90° clockwise onto the screen). Every
+glyph and icon comes from one of four sprite sheets, and each sheet is built
+twice: upright for portrait, and pre-rotated for landscape. Only the active
+orientation's sheets are loaded. At runtime the face only blits: in
+landscape, `canvas_to_screen()` moves a rect's origin onto the screen, and
+no pixels are ever rotated.
 
 | Row | Content |
 |---|---|
 | Status | quiet-time icon · time (follows the 12h/24h setting) · battery |
 | Date | `M/D` · two-letter weekday |
 | Spoken time | hour word / minute word / AM-PM (always 12-hour) |
-| Progress | bar + labels; Clay settings: minute/hour × start-end/elapsed-remaining |
+| Progress | bar + labels |
+
+Settings (Clay): orientation (portrait/landscape), what the bar measures
+(minute/hour), and what the labels show (start-end/elapsed-remaining).
 
 Ticks are per-second when the bar is in minute mode or the labels show
 elapsed/remaining, and per-minute otherwise.
 
 ### Layout values (for review)
 
-All in canvas pixels. Text y values are cap tops; text ink keeps an 8px
-margin on both sides.
+All in canvas pixels. Text y values are cap tops, and text ink keeps an 8px
+margin on both sides. W×H is the canvas: 144×168 portrait, 168×144
+landscape.
 
-- Status row 0–32: text cap at y=11, icons at y=12, speaker x=8, battery
-  body x=144–161 (nub to 163); separator line at y=33.
+- Status row 0–32: text cap at y=11, centered on W/2; icons at y=12; speaker
+  x=8; battery body from W−24 to W−7 (nub 2px past it); separator line at
+  y=33.
 - Date row: cap at y=36.
-- Spoken-time rows: caps at y=57 / 76 / 96, centered on x=84.
-- Progress: track x=7, y=116, 154×5 (clipped corners); labels cap at y=124.
+- Spoken time, centered on W/2: caps at y=69 / 88 / 108 in portrait,
+  57 / 76 / 96 in landscape.
+- Progress: track x=7, y=H−28, (W−14)×5 with clipped corners; labels cap at
+  y=H−20.
 
-These come from measuring the mockup's Frame 3 at 1×. Every element sits
-within 1px of the mockup (`tools/compare_mock.py`).
+These come from measuring the mockup at 1× (Frames 1–2 for portrait, Frame 3
+for landscape). In both orientations every element sits within 1px of the
+mockup (`tools/compare_mock.py`).
 
-![Mockup vs emulator](docs/screenshots/compare_side_by_side.png)
+![Mockup vs emulator, portrait](docs/screenshots/portrait/compare_side_by_side.png)
+![Mockup vs emulator, landscape](docs/screenshots/landscape/compare_side_by_side.png)
 
 ### Font
 
@@ -108,14 +124,16 @@ publishing.**
 ## Working on it
 
 ```sh
-python3 tools/gen_assets.py     # regenerate resources/images/*.png + src/c/assets.h
+python3 tools/gen_assets.py     # regenerate resources/images/*.png (both orientations) + src/c/assets.h
 python3 tests/check_logic.py    # host-side logic tests
 pebble build && cp build/poddle.pbw dist/
 
 tools/emu.sh start
-tools/screenshot.sh /tmp/shot 15:29:18 10/1/4 1 1 65 0 0   # pinned demo build
+# pinned demo build: time date/wday mode format battery quiet 24h orientation
+tools/screenshot.sh /tmp/shot 15:29:18 10/1/4 1 1 65 0 0 0
 NODE_PATH=$(npm root -g) node tools/render_mock.js 2026-10-01T15:29:18 /tmp/mock
-python3 tools/compare_mock.py /tmp/mock_canvas.png /tmp/shot_canvas.png /tmp/cmp
+python3 tools/compare_mock.py /tmp/mock_portrait_hour.png /tmp/shot_canvas.png /tmp/cmp
+# landscape: pass 1 as the last screenshot.sh argument, compare with /tmp/mock_canvas.png
 ```
 
 Screenshot builds pin the time, battery and settings through
