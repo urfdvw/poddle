@@ -1,4 +1,4 @@
-# Handover: iPod mini–style Pebble Watchface
+# Handover: Pebble Watchface in the style of the most popular mp3 player in year 2004
 
 **For:** Claude Code
 **From:** Design/spec phase (Clover), handing off to implementation
@@ -44,15 +44,15 @@ Before writing any application code, set up a working Pebble C SDK development e
 - **Critical architectural point:** rotation happens once, at **asset build time** (pre-rendering bitmaps rotated), not at runtime. There is no runtime rotation transform, no framebuffer manipulation, no `RotBitmapLayer` runtime rotation calls for arbitrary angles. All drawing at runtime is plain 2D positioning of pre-rotated bitmaps onto a 168×144 canvas. Do not introduce any runtime rotation math — if you find yourself needing it, something has gone wrong architecturally and it should be flagged back rather than worked around.
 
 **Visual style**
-- Overall look evokes the classic iPod mini player UI (status bar + info area + progress bar, three-section layout).
+- Overall look evokes the classic UI of the most popular mp3 player in year 2004 (status bar + info area + progress bar, three-section layout).
 - All text and icons are pre-rotated bitmap assets.
 - Monochrome (black/white) — target single-color Pebble hardware.
 
-**Scaling principle (important — do not pixel-match the original iPod mini)**
-- Do **not** scale iPod mini's original 138×110 pixel layout proportionally and copy coordinates.
-- Instead, replicate iPod mini's *design language and proportions*, not its literal pixel grid:
+**Scaling principle (important — do not pixel-match the most popular mp3 player in year 2004)**
+- Do **not** scale the original 138×110 pixel layout of the most popular mp3 player in year 2004 proportionally and copy coordinates.
+- Instead, replicate the *design language and proportions* of the most popular mp3 player in year 2004, not its literal pixel grid:
   - Font size should be set relative to what fits well on the larger 168×144 canvas (~60% more pixels available than the original), not shrunk to match original pixel counts.
-  - Spacing between elements within each row is **elastic** — computed from available width at build/layout time, not hardcoded from measurements taken off an iPod mini screenshot.
+  - Spacing between elements within each row is **elastic** — computed from available width at build/layout time, not hardcoded from measurements taken off a screenshot of the most popular mp3 player in year 2004.
   - Extra horizontal space (compared to the original device) is absorbed by stretching/compressing inter-element spacing, not by adding new visual elements to "fill" it.
 - Element positioning within each row uses an **anchor + elastic spacing** model:
   - Left-aligned elements: fixed offset from the left edge.
@@ -85,14 +85,14 @@ Before writing any application code, set up a working Pebble C SDK development e
 **Longest-phrase reference (verified by exhaustive script over all 720 hour×minute combinations):** the longest spoken-time phrase is 19 characters (e.g. "Eleven Twenty-Three"). This originally informed a marquee-scroll design for overflow handling — **that marquee design was later superseded**. The current approved design instead splits hour-word and minute-word onto two separate stacked lines (see §4.1), which keeps every line short enough that overflow essentially does not occur in practice (hour words max out at 6 characters — "Eleven"/"Twelve" — and no minute word exceeds "Twenty-Three" which fits on its own line). **Do not implement marquee/scrolling text.** This was explicitly removed from scope.
 
 **Font choice**
-- Visual reference: iPod mini's original system font, Espy Sans (Apple proprietary, do not use — licensing risk).
-- Use **Carthage Sans** instead — an open-licensed (CC BY-SA 4.0 / OFL, dual-licensed) font modeled on Espy Sans' 12pt bitmap design. Visually close to the iPod mini look.
+- Visual reference: the original system font of the most popular mp3 player in year 2004, Espy Sans (proprietary, do not use — licensing risk).
+- Use **Carthage Sans** instead — an open-licensed (CC BY-SA 4.0 / OFL, dual-licensed) font modeled on Espy Sans' 12pt bitmap design. Visually close to the look of the most popular mp3 player in year 2004.
 - **Attribution requirement:** if/when this watchface is published, credit Carthage Sans in the app description per its license terms. This is independent of whether the watchface's own source code is open or closed (Pebble App Store does not require open-sourcing watchfaces — confirmed).
 
 **Asset production pipeline**
 1. Render each required string (single chars for category A, two-letter pairs for category B, whole words for category C) using Carthage Sans via Python + PIL.
 2. Rotate each rendered glyph/word 90° immediately after rendering (`rotate(90, expand=True)` or equivalent).
-3. Crop/center according to the actual target size on the 168×144 canvas (do not reuse iPod mini's original pixel dimensions).
+3. Crop/center according to the actual target size on the 168×144 canvas (do not reuse the original pixel dimensions of the most popular mp3 player in year 2004).
 4. Pack each category into its own sprite sheet (not hundreds of individual resource files) — stay within the Pebble resource limits: **256 resource files max**, **128 KB total on Aplite / 256 KB total on Basalt & Chalk**.
 5. This is a **build-time** process. Runtime code only does lookups into the sprite sheet + blit — no rendering, no rotation, at runtime.
 
@@ -137,7 +137,7 @@ This two-line layout was a deliberate late-stage change from an earlier single-l
 
 All words rendered in **Title Case**. 12-hour format. AM/PM determined from `struct tm.tm_hour` (`tm_hour < 12` → AM), independent of the system's 12h/24h display preference (`clock_is_24h_style()` is **not** used for this — this watchface always speaks in 12-hour terms for the spoken-time line, regardless of what the digit clock in the status bar shows).
 
-**No animation / no scrolling.** This was explicitly requested and confirmed. Earlier design discussion explored marquee-style scrolling (to replicate iPod's behavior for overflowing song titles) with three user-selectable modes (no scroll / scroll-once / periodic scroll) — **this entire feature was dropped** in favor of the two-line static layout. Do not implement any scrolling/animation logic for this row. If you encounter any reference to marquee behavior elsewhere, it is stale — the two-line static design supersedes it.
+**No animation / no scrolling.** This was explicitly requested and confirmed. Earlier design discussion explored marquee-style scrolling (to replicate the behavior of the most popular mp3 player in year 2004 for overflowing song titles) with three user-selectable modes (no scroll / scroll-once / periodic scroll) — **this entire feature was dropped** in favor of the two-line static layout. Do not implement any scrolling/animation logic for this row. If you encounter any reference to marquee behavior elsewhere, it is stale — the two-line static design supersedes it.
 
 ### 2.6 Row 4: Progress Bar
 

@@ -1,6 +1,6 @@
 # poddle
 
-The Pebble watch face that brings you back to 2004: an iPod mini-style layout
+The Pebble watch face that brings you back to 2004: a layout in the style of the most popular mp3 player in year 2004
 (status bar, info area, progress bar) on a 144×168 B/W screen, in portrait
 (default) or landscape.
 
@@ -115,11 +115,25 @@ mockup (`tools/compare_mock.py`).
 ### Font
 
 [Carthage Sans](https://github.com/csyde/carthage-fonts) Bold by Brian
-Connors, CC BY-SA 4.0 / SIL OFL (see `tools/fonts/`). It is rendered at 16px,
-where one FontStruct brick is exactly one pixel, which gives a 9px cap
-height. The longest line, "Twenty-Three", is 122px wide, so it and "O'Clock"
-(61px) fit easily. **Credit Carthage Sans in the app store description when
-publishing.**
+Connors, used under the SIL Open Font License 1.1 (see `tools/fonts/`). It is
+rendered at 16px, where one FontStruct brick is exactly one pixel, which
+gives a 9px cap height. The longest line, "Twenty-Three", is 122px wide, so
+it and "O'Clock" (61px) fit easily.
+
+## App store listing
+
+The description and screenshots are attached at publish time; the `.pbw`
+carries neither.
+
+- `store/description.txt`: the listing description (contact information
+  only).
+- `store/screenshots/`: one portrait and one landscape 144×168 B/W
+  screenshot per platform, regenerated with `tools/store_screenshots.sh`
+  (emulator running).
+- `tools/publish.sh`: runs `pebble publish --non-interactive` with both,
+  portrait first so it leads the listing. The description only applies when
+  the store app is first created. To swap the screenshots of an existing app,
+  pass `--replace-screenshots`.
 
 ## Working on it
 
@@ -145,7 +159,8 @@ normal `pebble build` leaves them out.
 - `src/c/` — watch face (`main.c`), canvas blitting, time words, labels
 - `src/c/assets.h`, `resources/images/` — generated sprite sheets (committed)
 - `src/pkjs/` — Clay config page
-- `tools/` — asset pipeline, SDK setup, emulator/screenshot/compare helpers
+- `tools/` — asset pipeline, SDK setup, emulator/screenshot/compare/publish helpers
+- `store/` — app store description and screenshots
 - `tests/` — logic tests
 - `dist/poddle.pbw` — committed build output
 - `docs/` — handover spec, HTML mockup, screenshots
