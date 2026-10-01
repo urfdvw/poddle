@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Build-time asset pipeline for the poddle watch face.
 
-Renders every string the face can show with Carthage Sans Bold at its native
-pixel size (16px: one FontStruct brick = one pixel, 1-bit, no antialiasing),
-rotates each one 90 degrees clockwise, and packs each category into its own
-sprite sheet:
+Renders every string the face can show with Carthage Sans Bold, 1-bit with
+no antialiasing, rotates each one 90 degrees clockwise, and packs each
+category into its own sprite sheet:
 
   A  digits.png    0-9 : / -           (status time, date, progress labels)
   B  weekdays.png  Mo Tu We Th Fr Sa Su
@@ -14,6 +13,11 @@ sprite sheet:
 Each sheet is also written upright as NAME_portrait.png (the rotated sheet
 rotated back) for the portrait orientation, which draws the same entries
 without any rotation. src/c/assets.h describes where each entry lives.
+
+Two scales are built:
+  base   16px (one FontStruct brick = one pixel) for the 144x168 screens
+  large  22px, written as NAME~emery.png so the SDK picks it for the
+         200x228 Pebble Time 2; assets.h selects the matching tables.
 
 Coordinates: the design canvas is 168x144 (landscape). Rotating it 90 degrees
 clockwise gives the physical 144x168 screen, so canvas (x, y) lands on
@@ -33,11 +37,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONT_PATH = os.path.join(ROOT, "tools", "fonts", "Carthage-Sans-Bold.ttf")
-FONT_PX = 16  # 1024 units/em, 64-unit bricks -> 16px puts one brick on one pixel
 IMG_DIR = os.path.join(ROOT, "resources", "images")
 HEADER = os.path.join(ROOT, "src", "c", "assets.h")
 
-AMPM_TRACKING = 2  # extra px between letters, the mockup's letter-spacing: 0.15em
 
 DIGIT_GLYPHS = list("0123456789:/-")
 WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]  # struct tm tm_wday order
@@ -49,7 +51,7 @@ TENS = ["Twenty", "Thirty", "Forty", "Fifty"]
 WORDS = ONES + TEENS + TENS + ["Oh", "O'Clock", "AM", "PM"]
 
 # Canvas-orientation pixel art, '#' = black.
-ICONS = {
+BASE_ICONS = {
     "QUIET_OFF": [  # sound on: speaker + waves
         ".....#...#...",
         "....##....#..",
@@ -85,29 +87,78 @@ ICONS = {
     ],
 }
 
-font = ImageFont.truetype(FONT_PATH, FONT_PX)
-BASELINE = font.getmetrics()[0]  # ascent in px; text drawn at y=0 has its baseline here
-CAP_TOP = BASELINE - 9  # 9-brick cap height
+
+def _grid(w, h):
+    return [["."] * w for _ in range(h)]
+
+
+def _speaker(g, box_rows, flare):
+    """Filled cone: a box on the left, then columns widening by one row up
+    and down each."""
+    top, bottom = box_rows
+    for c in range(flare[0]):
+        for r in range(top, bottom + 1):
+            g[r][c] = "#"
+    for i, c in enumerate(range(flare[0], flare[1] + 1)):
+        for r in range(top - 1 - i, bottom + 2 + i):
+            g[r][c] = "#"
+
+
+def large_icons():
+    w, h = 17, 12
+    on, off = _grid(w, h), _grid(w, h)
+    for g in (on, off):
+        _speaker(g, (4, 7), (4, 7))
+    # Waves: two arcs centered on the cone's mouth.
+    for radius, (r0, r1) in ((3.5, (3, 8)), (7.5, (0, 11))):
+        for r in range(r0, r1 + 1):
+            dy = r - 5.5
+            c = round(7 + (radius ** 2 - dy ** 2) ** 0.5) if abs(dy) <= radius else None
+            if c is not None:
+                on[r][min(c, w - 2)] = "#"
+    for i in range(6):  # quiet time: X
+        off[3 + i][10 + i] = "#"
+        off[3 + i][15 - i] = "#"
+    battery = _grid(27, 12)  # 25x12 body + 2x4 nub; fill drawn at runtime
+    for c in range(1, 24):
+        battery[0][c] = battery[11][c] = "#"
+    for r in range(1, 11):
+        battery[r][0] = battery[r][24] = "#"
+    for r in range(4, 8):
+        battery[r][25] = battery[r][26] = "#"
+    rows = lambda g: ["".join(row) for row in g]  # noqa: E731
+    return {"QUIET_OFF": rows(on), "QUIET_ON": rows(off), "BATTERY": rows(battery)}
+
+
+class Scale:
+    def __init__(self, name, font_px, tracking, icons, suffix):
+        self.name, self.font_px, self.tracking, self.icons = name, font_px, tracking, icons
+        self.suffix = suffix  # resource file tag, e.g. "~emery"
+        self.font = ImageFont.truetype(FONT_PATH, font_px)
+        probe, _ = render(self, "H")
+        self.cap_top = ink_rows(probe)[1]
+        self.cap_h = ink_rows(probe)[3] - self.cap_top
 
 
 PAD = 4  # left padding so glyphs that overhang their origin are not clipped
 
 
-def render(text, tracking=0):
+def render(sc, text, tracking=0):
     """Render text 1-bit on a canvas-oriented strip with its pen origin at
     x=PAD; returns (img, advance)."""
+    font = sc.font
     if tracking:
-        adv = sum(int(font.getlength(c)) for c in text) + tracking * (len(text) - 1)
+        adv = sum(round(font.getlength(c)) for c in text) + tracking * (len(text) - 1)
     else:
-        adv = int(font.getlength(text))
-    img = Image.new("1", (adv + 2 * PAD, FONT_PX + 4), 1)
+        adv = round(font.getlength(text))
+    img = Image.new("1", (adv + 2 * PAD, sc.font_px + 6), 1)
     d = ImageDraw.Draw(img)
     d.fontmode = "1"
     if tracking:
         x = PAD
         for c in text:
             d.text((x, 0), c, font=font, fill=0)
-            x += int(font.getlength(c)) + tracking
+            x += round(font.getlength(c)) + tracking
     else:
         d.text((PAD, 0), text, font=font, fill=0)
     return img, adv
@@ -119,19 +170,19 @@ def ink_rows(img):
     return box
 
 
-def save_sheet(sheet, name):
-    sheet.save(os.path.join(IMG_DIR, name + ".png"), optimize=True)
+def save_sheet(sc, sheet, name):
+    sheet.save(os.path.join(IMG_DIR, name + sc.suffix + ".png"), optimize=True)
     sheet.transpose(Image.Transpose.ROTATE_90).save(
-        os.path.join(IMG_DIR, name + "_portrait.png"), optimize=True)
+        os.path.join(IMG_DIR, name + "_portrait" + sc.suffix + ".png"), optimize=True)
 
 
-def build_text_sheet(name, items, tracking_for=None):
+def build_text_sheet(sc, name, items, tracking_for=None):
     """items: list of (c_name, text). Returns sheet metadata."""
     rendered = []
     top, bottom = None, None
     for c_name, text in items:
         trk = tracking_for(text) if tracking_for else 0
-        img, adv = render(text, trk)
+        img, adv = render(sc, text, trk)
         box = ink_rows(img)
         assert box is not None, text
         top = box[1] if top is None else min(top, box[1])
@@ -161,15 +212,15 @@ def build_text_sheet(name, items, tracking_for=None):
     for s in strips:
         sheet.paste(s, (0, y))
         y += s.height
-    save_sheet(sheet, name)
-    return {"name": name, "band_h": band_h, "cap_offset": CAP_TOP - top,
+    save_sheet(sc, sheet, name)
+    return {"name": name, "band_h": band_h, "cap_offset": sc.cap_top - top,
             "entries": entries, "canvas_strips": canvas_strips}
 
 
-def build_icon_sheet():
+def build_icon_sheet(sc):
     entries, strips = [], []
     py, max_h = 0, 0
-    for name, rows in ICONS.items():
+    for name, rows in sc.icons.items():
         h, w = len(rows), len(rows[0])
         img = Image.new("1", (w, h), 1)
         for y, row in enumerate(rows):
@@ -187,7 +238,7 @@ def build_icon_sheet():
     for s in strips:
         sheet.paste(s, (0, y))
         y += s.height
-    save_sheet(sheet, "icons")
+    save_sheet(sc, sheet, "icons")
     return {"name": "icons", "entries": entries}
 
 
@@ -195,14 +246,20 @@ def c_ident(text):
     return "".join(c if c.isalnum() else "_" for c in text.upper().replace("'", ""))
 
 
-def self_check(sheets):
+def self_check(sc, sheets):
     """Composing entries by advance (black-only, like GCompOpAnd at runtime)
-    must reproduce rendering the whole string in one go."""
+    must reproduce rendering the whole string in one go. That only holds
+    where every advance is a whole number of pixels (16px, one brick per
+    pixel); at other sizes the runtime's integer advances are the reference,
+    so only the space advance is returned."""
     def table(key):
         return {e["text"]: (e, st) for e, st in zip(sheets[key]["entries"],
                                                     sheets[key]["canvas_strips"])}
     digits, words = table("digits"), table("words")
-    space = int(font.getlength(" "))
+    space = round(sc.font.getlength(" "))
+    if sc.font_px % 16:
+        print(f"self-check ({sc.name}): skipped, {sc.font_px}px has fractional advances")
+        return space
 
     def compose(tokens, band_key):
         band = sheets[band_key]["band_h"]
@@ -222,8 +279,8 @@ def self_check(sheets):
         return out
 
     def reference(text, band_key):
-        top = CAP_TOP - sheets[band_key]["cap_offset"]
-        img, adv = render(text)
+        top = sc.cap_top - sheets[band_key]["cap_offset"]
+        img, adv = render(sc, text)
         return img.crop((0, top, adv + 2 * PAD, top + sheets[band_key]["band_h"]))
 
     phrases = []
@@ -257,21 +314,22 @@ def self_check(sheets):
             print(f"compose mismatch: {text!r}", file=sys.stderr)
     if bad:
         raise SystemExit(f"{bad} composition mismatches")
-    print(f"self-check: {len(checks)} composed strings match direct rendering")
+    print(f"self-check ({sc.name}): {len(checks)} composed strings match direct rendering")
     return space
 
 
-def write_header(sheets, space):
+def write_header(scales):
+    base = scales["base"][0]
     lines = [
         "// Generated by tools/gen_assets.py -- do not edit.",
         "#pragma once",
         "",
         "#include <stdint.h>",
         "",
-        "// Sprite sheet entry. w/h are the strip's size on the 168x144 design",
-        "// canvas; (px, py) is its top-left in the (pre-rotated) sheet bitmap,",
-        "// where it occupies h columns by w rows. The strip starts ox columns",
-        "// from the pen position and the pen then moves adv columns. Ink spans",
+        "// Sprite sheet entry. w/h are the strip's size on the design canvas;",
+        "// (px, py) is its top-left in the (pre-rotated) sheet bitmap, where it",
+        "// occupies h columns by w rows. The strip starts ox columns from the",
+        "// pen position and the pen then moves adv columns. Ink spans",
         "// [pen + lsb, pen + adv - rsb).",
         "typedef struct {",
         "  uint16_t py;",
@@ -284,63 +342,85 @@ def write_header(sheets, space):
         "  int8_t rsb;",
         "} SheetEntry;",
         "",
-        f"#define ASSET_SPACE_ADVANCE {space}",
-        f"#define ASSET_AMPM_TRACKING {AMPM_TRACKING}",
+        "// The large set (NAME~emery.png) is what the SDK packs for the",
+        "// 200x228 Pebble Time 2; every other target gets the base set.",
+        "#if defined(PBL_DISPLAY_WIDTH) && PBL_DISPLAY_WIDTH >= 200",
+        "#define ASSET_LARGE 1",
+        "#else",
+        "#define ASSET_LARGE 0",
+        "#endif",
         "",
     ]
-    for key, prefix in (("digits", "DIGIT"), ("weekdays", "WDAY"), ("words", "WORD")):
-        s = sheets[key]
-        lines.append(f"// {key}.png")
-        lines.append(f"#define ASSET_{prefix}_BAND_H {s['band_h']}")
-        lines.append(f"#define ASSET_{prefix}_CAP_OFFSET {s['cap_offset']}"
-                     "  // rows from band top to cap top")
+    # Entry order is the same at every scale, so the enums are shared.
+    for key, prefix in (("digits", "DIGIT"), ("weekdays", "WDAY"), ("words", "WORD"),
+                        ("icons", "ICON")):
         lines.append("enum {")
-        for i, e in enumerate(s["entries"]):
+        for i, e in enumerate(base[key]["entries"]):
             lines.append(f"  {prefix}_{e['name']} = {i},")
         lines.append(f"  {prefix}_COUNT")
         lines.append("};")
         lines.append("")
-    lines.append("// icons.png")
-    lines.append("enum {")
-    for i, e in enumerate(sheets["icons"]["entries"]):
-        lines.append(f"  ICON_{e['name']} = {i},")
-    lines.append("  ICON_COUNT")
-    lines.append("};")
-    lines.append("")
-    for key, prefix in (("digits", "DIGIT"), ("weekdays", "WDAY"), ("words", "WORD"),
-                        ("icons", "ICON")):
-        lines.append(f"static const SheetEntry ASSET_{prefix}_ENTRIES[{prefix}_COUNT] = {{")
-        for e in sheets[key]["entries"]:
-            label = e.get("text", e["name"])
-            lines.append(f"  {{ {e['py']:4d}, {e['px']}, {e['w']:3d}, {e['h']:2d}, "
-                         f"{e['ox']:2d}, {e['adv']:3d}, {e['lsb']:2d}, {e['rsb']:2d} }},"
-                         f"  // {label}")
-        lines.append("};")
+    for scale_name, (sheets, space, sc) in scales.items():
+        sfx = scale_name.upper()
+        lines.append(f"// {scale_name}: Carthage Sans Bold {sc.font_px}px, cap height {sc.cap_h}")
+        lines.append(f"#define ASSET_SPACE_ADVANCE_{sfx} {space}")
+        for key, prefix in (("digits", "DIGIT"), ("weekdays", "WDAY"), ("words", "WORD")):
+            lines.append(f"#define ASSET_{prefix}_CAP_OFFSET_{sfx} {sheets[key]['cap_offset']}"
+                         "  // rows from band top to cap top")
+        for key, prefix in (("digits", "DIGIT"), ("weekdays", "WDAY"), ("words", "WORD"),
+                            ("icons", "ICON")):
+            lines.append(f"static const SheetEntry ASSET_{prefix}_ENTRIES_{sfx}"
+                         f"[{prefix}_COUNT] = {{")
+            for e in sheets[key]["entries"]:
+                label = e.get("text", e["name"])
+                lines.append(f"  {{ {e['py']:4d}, {e['px']}, {e['w']:3d}, {e['h']:2d}, "
+                             f"{e['ox']:2d}, {e['adv']:3d}, {e['lsb']:2d}, {e['rsb']:2d} }},"
+                             f"  // {label}")
+            lines.append("};")
         lines.append("")
+    lines.append("#if ASSET_LARGE")
+    names = ["SPACE_ADVANCE", "DIGIT_CAP_OFFSET", "WDAY_CAP_OFFSET", "WORD_CAP_OFFSET",
+             "DIGIT_ENTRIES", "WDAY_ENTRIES", "WORD_ENTRIES", "ICON_ENTRIES"]
+    for n in names:
+        lines.append(f"#define ASSET_{n} ASSET_{n}_LARGE")
+    lines.append("#else")
+    for n in names:
+        lines.append(f"#define ASSET_{n} ASSET_{n}_BASE")
+    lines.append("#endif")
+    lines.append("")
     with open(HEADER, "w") as f:
         f.write("\n".join(lines))
 
 
-def main():
-    os.makedirs(IMG_DIR, exist_ok=True)
+def build_scale(sc):
     digit_names = {":": "COLON", "/": "SLASH", "-": "MINUS"}
     sheets = {
-        "digits": build_text_sheet("digits", [(digit_names.get(c, c), c) for c in DIGIT_GLYPHS]),
-        "weekdays": build_text_sheet("weekdays", [(w.upper(), w) for w in WEEKDAYS]),
-        "words": build_text_sheet("words", [(c_ident(w), w) for w in WORDS],
-                                  tracking_for=lambda t: AMPM_TRACKING if t in ("AM", "PM") else 0),
-        "icons": build_icon_sheet(),
+        "digits": build_text_sheet(sc, "digits",
+                                   [(digit_names.get(c, c), c) for c in DIGIT_GLYPHS]),
+        "weekdays": build_text_sheet(sc, "weekdays", [(w.upper(), w) for w in WEEKDAYS]),
+        "words": build_text_sheet(sc, "words", [(c_ident(w), w) for w in WORDS],
+                                  tracking_for=lambda t: sc.tracking if t in ("AM", "PM") else 0),
+        "icons": build_icon_sheet(sc),
     }
-    space = self_check(sheets)
-    write_header(sheets, space)
-    manifest = {k: {kk: vv for kk, vv in v.items() if kk != "canvas_strips"}
-                for k, v in sheets.items()}
+    return sheets, self_check(sc, sheets), sc
+
+
+def main():
+    os.makedirs(IMG_DIR, exist_ok=True)
+    # AM/PM tracking reproduces the mockup's letter-spacing: 0.15em.
+    scales = {
+        "base": build_scale(Scale("base", 16, 2, BASE_ICONS, "")),
+        "large": build_scale(Scale("large", 22, 3, large_icons(), "~emery")),
+    }
+    write_header(scales)
+    manifest = {name: {k: {kk: vv for kk, vv in v.items() if kk != "canvas_strips"}
+                       for k, v in sheets.items()}
+                for name, (sheets, _, _) in scales.items()}
     with open(os.path.join(IMG_DIR, "sheets.json"), "w") as f:
         json.dump(manifest, f, indent=1)
-    total = sum(os.path.getsize(os.path.join(IMG_DIR, n + sfx + ".png"))
-                for n in ("digits", "weekdays", "words", "icons") for sfx in ("", "_portrait"))
-    print(f"wrote 4 sheets x 2 orientations ({total} bytes PNG) and "
-          f"{os.path.relpath(HEADER, ROOT)}")
+    files = [f for f in os.listdir(IMG_DIR) if f.endswith(".png")]
+    total = sum(os.path.getsize(os.path.join(IMG_DIR, f)) for f in files)
+    print(f"wrote {len(files)} sheets ({total} bytes PNG) and {os.path.relpath(HEADER, ROOT)}")
 
 
 if __name__ == "__main__":

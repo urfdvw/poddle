@@ -2,14 +2,15 @@
 
 #include <pebble.h>
 
-// The face is laid out on a design canvas: 144x168 in portrait (the screen
-// itself) or 168x144 in landscape. Landscape loads sprite sheets whose
-// glyphs and icons were rotated 90 degrees clockwise at build time, so a
-// canvas rect only has its origin moved onto the physical 144x168 screen
-// (canvas_to_screen); portrait loads the upright sheets and draws 1:1.
-// Either way no pixels are rotated at runtime.
-#define SCREEN_W 144
-#define SCREEN_H 168
+// The face is laid out on a design canvas: the screen itself in portrait,
+// or the screen turned sideways in landscape (e.g. 168x144 for a 144x168
+// screen). Landscape loads sprite sheets whose glyphs and icons were
+// rotated 90 degrees clockwise at build time, so a canvas rect only has its
+// origin moved onto the physical screen (canvas_to_screen); portrait loads
+// the upright sheets and draws 1:1. Either way no pixels are rotated at
+// runtime.
+#define SCREEN_W PBL_DISPLAY_WIDTH
+#define SCREEN_H PBL_DISPLAY_HEIGHT
 
 typedef enum {
   ORIENTATION_PORTRAIT = 0,

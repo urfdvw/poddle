@@ -7,39 +7,60 @@
 
 // Layout on the design canvas (y values are cap tops for text). Rows above
 // the spoken time hang from the top, the progress row from the bottom;
-// x positions follow the canvas width. Values measured off the mockup:
-// Frames 1-2 for portrait, Frame 3 for landscape.
+// x positions follow the canvas width.
+//
+// The spoken-time block (hour cap top to AM/PM baseline) is centered in the
+// space between the date row and the progress track, lifted slightly the
+// way the mockup sits it.
+#if ASSET_LARGE
+// Pebble Time 2 (200x228), 22px sprites (13px caps): the base layout scaled
+// by 22/16 and rounded.
+#define MARGIN_TEXT 11
+#define STATUS_CAP_Y 16
+#define STATUS_ICON_Y 17
+#define STATUS_ICON_X 11
+#define BATTERY_INSET 33  // 25px body ends 8px from the right, nub hangs past it
+#define SEPARATOR_Y 46
+#define DATE_CAP_Y 50
+#define TRACK_X 10
+#define TRACK_INSET_BOTTOM 38
+#define TRACK_H 7
+#define LABEL_INSET_BOTTOM 28
+#define WORDS_REGION_TOP 69
+#define WORDS_BLOCK_H 67
+#define WORDS_MINUTE_DY 26
+#define WORDS_AMPM_DY 54
+#define WORDS_LIFT 3
+#define BATTERY_FILL_DX 2
+#define BATTERY_FILL_DY 2
+#define BATTERY_FILL_W 21
+#define BATTERY_FILL_H 8
+#else
+// 144x168 screens, 16px sprites (9px caps). Values measured off the mockup:
+// Frames 1-2 for portrait, Frame 3 for landscape; the spoken-time caps land
+// at y=69/88/108 in portrait and 57/76/96 in landscape.
 #define MARGIN_TEXT 8  // text ink keeps 8px from either edge
-
 #define STATUS_CAP_Y 11
 #define STATUS_ICON_Y 12  // 9px icons centered on the 34px status row
 #define STATUS_ICON_X 8
 #define BATTERY_INSET 24  // 18px body ends 6px from the right, nub hangs past it
 #define SEPARATOR_Y 33
-
 #define DATE_CAP_Y 36
-
 #define TRACK_X 7
 #define TRACK_INSET_BOTTOM 28
 #define TRACK_H 5
 #define LABEL_INSET_BOTTOM 20
-
-typedef struct {
-  int16_t hour_y;
-  int16_t minute_y;
-  int16_t ampm_y;
-} WordsLayout;
-
-static const WordsLayout WORDS_LAYOUT[2] = {
-  [ORIENTATION_PORTRAIT] = {69, 88, 108},
-  [ORIENTATION_LANDSCAPE] = {57, 76, 96},
-};
-
+#define WORDS_REGION_TOP 50
+#define WORDS_BLOCK_H 48
+#define WORDS_MINUTE_DY 19
+#define WORDS_AMPM_DY 39
+#define WORDS_LIFT 2
 // Battery fill area inside the BATTERY icon.
 #define BATTERY_FILL_DX 2
 #define BATTERY_FILL_DY 2
 #define BATTERY_FILL_W 14
 #define BATTERY_FILL_H 5
+#endif
 
 #define PERSIST_KEY_PROGRESS_MODE 1
 #define PERSIST_KEY_LABEL_FORMAT 2
@@ -125,16 +146,17 @@ static void prv_draw_words(GContext *ctx, const struct tm *t) {
   TwPhrase phrase;
   time_words(t->tm_hour, t->tm_min, &phrase);
 
-  const WordsLayout *layout = &WORDS_LAYOUT[s_orientation];
+  const int region_h = canvas_height() - TRACK_INSET_BOTTOM - WORDS_REGION_TOP;
+  const int hour_y = WORDS_REGION_TOP + (region_h - WORDS_BLOCK_H) / 2 - WORDS_LIFT;
   const int center_x = canvas_width() / 2;
   Glyph run[TW_MAX_TOKENS];
   int n = prv_line_glyphs(&phrase.hour, run);
-  canvas_draw_centered(ctx, run, n, center_x, layout->hour_y);
+  canvas_draw_centered(ctx, run, n, center_x, hour_y);
   n = prv_line_glyphs(&phrase.minute, run);
-  canvas_draw_centered(ctx, run, n, center_x, layout->minute_y);
+  canvas_draw_centered(ctx, run, n, center_x, hour_y + WORDS_MINUTE_DY);
 
   Glyph ampm = {SHEET_WORDS, phrase.ampm};
-  canvas_draw_centered(ctx, &ampm, 1, center_x, layout->ampm_y);
+  canvas_draw_centered(ctx, &ampm, 1, center_x, hour_y + WORDS_AMPM_DY);
 }
 
 static void prv_draw_progress(GContext *ctx, const struct tm *t) {

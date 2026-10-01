@@ -16,7 +16,9 @@
     "enableMultiJS": true,
     "targetPlatforms": [
       "aplite",
+      "basalt",
       "diorite",
+      "emery",
       "flint"
     ],
     "watchapp": {

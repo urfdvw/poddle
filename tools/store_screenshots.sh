@@ -1,24 +1,31 @@
 #!/usr/bin/env bash
-# Captures the app store screenshots from the flint emulator: one portrait,
-# one landscape, as pure black/white 144x168 PNGs. All three targets share
-# the same 144x168 B/W screen, so each platform gets the same pair.
+# Captures the app store screenshots: one portrait and one landscape per
+# platform, as pure black/white PNGs. The 144x168 targets (aplite, basalt,
+# diorite, flint) share one pair taken on flint; emery (200x228, large
+# sprites) gets its own. Boots each emulator in turn.
 # Upload order puts portrait first (see tools/publish.sh).
-#   tools/emu.sh start && tools/store_screenshots.sh
+#   tools/store_screenshots.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 tmp="${TMPDIR:-/tmp}/poddle-store"
 mkdir -p "$tmp" store/screenshots
-tools/screenshot.sh "$tmp/portrait" 15:29:18 10/1/4 1 1 65 0 0 0 >/dev/null
-tools/screenshot.sh "$tmp/landscape" 15:29:18 10/1/4 1 1 65 0 0 1 >/dev/null
-"$(uv tool dir)/pebble-tool/bin/python" - "$tmp" store/screenshots <<'PY'
+capture() {  # EMU platform, file prefix, target platforms...
+  local emu="$1" prefix="$2"; shift 2
+  tools/emu.sh stop; sleep 1
+  EMU_PLATFORM="$emu" tools/emu.sh start
+  EMU_PLATFORM="$emu" tools/screenshot.sh "$tmp/${prefix}_portrait" 15:29:18 10/1/4 1 1 65 0 0 0 >/dev/null
+  EMU_PLATFORM="$emu" tools/screenshot.sh "$tmp/${prefix}_landscape" 15:29:18 10/1/4 1 1 65 0 0 1 >/dev/null
+  tools/emu.sh stop
+  "$(uv tool dir)/pebble-tool/bin/python" - "$tmp" "$prefix" store/screenshots "$@" <<'PY'
 import sys
 from PIL import Image
-src, dst = sys.argv[1], sys.argv[2]
+src, prefix, dst, platforms = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:]
 for n, name in ((1, "portrait"), (2, "landscape")):
-    # The emulator tints white light gray; store the real 1-bit screen.
-    im = Image.open(f"{src}/{name}_screen.png").convert("L").point(lambda p: 0 if p < 110 else 255)
-    assert im.size == (144, 168)
-    for platform in ("aplite", "diorite", "flint"):
-        im.convert("1").save(f"{dst}/{platform}_{n}_{name}.png")
+    im = Image.open(f"{src}/{prefix}_{name}_screen.png").convert("1")
+    for platform in platforms:
+        im.save(f"{dst}/{platform}_{n}_{name}.png")
 PY
+}
+capture flint small aplite basalt diorite flint
+capture emery large emery
 ls store/screenshots

@@ -11,7 +11,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 shots=()
-for platform in aplite diorite flint; do
+for platform in aplite basalt diorite emery flint; do
   shots+=("store/screenshots/${platform}_1_portrait.png" "store/screenshots/${platform}_2_landscape.png")
 done
 pebble publish \

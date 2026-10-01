@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds a demo-pinned .pbw, runs it in the flint emulator and saves the
+# Builds a demo-pinned .pbw, runs it in the running emulator (tools/emu.sh,
+# EMU_PLATFORM) and saves the
 # physical screenshot plus the canvas view (landscape: rotated back to 168x144).
 #   tools/screenshot.sh OUT_PREFIX [HH:MM:SS] [M/D/WDAY] [MODE FORMAT] [BATTERY] [QUIET] [24H] [ORIENT]
 # MODE: 0 minute, 1 hour. FORMAT: 0 segment start/end, 1 elapsed/remaining.
@@ -23,7 +24,12 @@ tools/emu.sh shot "${out}_screen.png"
 "$(uv tool dir)/pebble-tool/bin/python" - "${out}_screen.png" "${out}_canvas.png" "$orient" <<'PY'
 import sys
 from PIL import Image
-im = Image.open(sys.argv[1])
+# The emulator tints white gray and dims it further over time (backlight
+# simulation); the face is pure black on white, so store it as such.
+im = Image.open(sys.argv[1]).convert("L").point(lambda p: 0 if p < 40 else 255).convert("1")
+if im.size == (148, 172):  # legacy emulator machines draw a 2px frame
+    im = im.crop((2, 2, 146, 170))
+im.save(sys.argv[1])
 if sys.argv[3] == "1":
     # Physical (px, py) shows canvas (py, 143 - px): rotate 90 deg counter-clockwise.
     im = im.transpose(Image.Transpose.ROTATE_90)
