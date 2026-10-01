@@ -2,18 +2,19 @@
 # Builds a demo-pinned .pbw, runs it in the running emulator (tools/emu.sh,
 # EMU_PLATFORM) and saves the
 # physical screenshot plus the canvas view (landscape: rotated back to 168x144).
-#   tools/screenshot.sh OUT_PREFIX [HH:MM:SS] [M/D/WDAY] [MODE FORMAT] [BATTERY] [QUIET] [24H] [ORIENT] [THEME]
+#   tools/screenshot.sh OUT_PREFIX [HH:MM:SS] [M/D/WDAY] [MODE FORMAT] [BATTERY] [QUIET] [24H] [ORIENT] [THEME] [DISCONNECTED]
 # MODE: 0 minute, 1 hour. FORMAT: 0 segment start/end, 1 elapsed/remaining.
 # ORIENT: 0 portrait (default), 1 landscape. THEME: 0 B/W (default), 1 color.
+# DISCONNECTED: 0 phone connected (default), 1 disconnected.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 out="$1"; time="${2:-15:29:18}"; date="${3:-10/1/4}"
-mode="${4:-1}"; format="${5:-1}"; battery="${6:-65}"; quiet="${7:-0}"; h24="${8:-0}"; orient="${9:-0}"; theme="${10:-0}"
+mode="${4:-1}"; format="${5:-1}"; battery="${6:-65}"; quiet="${7:-0}"; h24="${8:-0}"; orient="${9:-0}"; theme="${10:-0}"; disconnected="${11:-0}"
 IFS=: read -r hh mm ss <<<"$time"
 IFS=/ read -r mo md wd <<<"$date"
 export PODDLE_DEFINES="DEMO_HOUR=$((10#$hh)) DEMO_MIN=$((10#$mm)) DEMO_SEC=$((10#$ss))
   DEMO_MON=$mo DEMO_MDAY=$md DEMO_WDAY=$wd DEMO_PROGRESS_MODE=$mode
-  DEMO_LABEL_FORMAT=$format DEMO_BATTERY=$battery DEMO_QUIET=$quiet DEMO_24H=$h24 DEMO_ORIENTATION=$orient DEMO_THEME=$theme"
+  DEMO_LABEL_FORMAT=$format DEMO_BATTERY=$battery DEMO_QUIET=$quiet DEMO_24H=$h24 DEMO_ORIENTATION=$orient DEMO_THEME=$theme DEMO_DISCONNECTED=$disconnected"
 pebble build >/dev/null 2>&1 || { pebble build; exit 1; }
 cp build/poddle.pbw "${TMPDIR:-/tmp}/poddle-demo.pbw"
 unset PODDLE_DEFINES

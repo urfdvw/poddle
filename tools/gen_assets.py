@@ -8,7 +8,7 @@ category into its own sprite sheet:
   A  digits.png    0-9 : / -           (status time, date, progress labels)
   B  weekdays.png  Mo Tu We Th Fr Sa Su
   C  words.png     spoken-time vocabulary + AM/PM
-  -  icons.png     quiet-time on/off speaker, battery outline
+  -  icons.png     quiet-time on/off speaker, disconnected, battery outline
      icons_color.png  the same icons tinted (and haloed) for the color theme
 
 Each sheet is also written upright as NAME_portrait.png (the rotated sheet
@@ -75,6 +75,17 @@ BASE_ICONS = {
         "....##.......",
         ".....#.......",
     ],
+    "DISCONNECTED": [  # phone link lost: Bluetooth rune + X, like QUIET_ON
+        "...#.........",
+        "...##........",
+        ".#.#.#.#...#.",
+        "..###...#.#..",
+        "...#.....#...",
+        "..###...#.#..",
+        ".#.#.#.#...#.",
+        "...##........",
+        "...#.........",
+    ],
     "BATTERY": [  # 18x9 body + 2x3 nub; fill is drawn at runtime
         ".#################..",
         "#.................#.",
@@ -127,8 +138,30 @@ def large_icons():
         battery[r][0] = battery[r][24] = "#"
     for r in range(4, 8):
         battery[r][25] = battery[r][26] = "#"
+    rune = [  # Bluetooth rune, 9 wide; the X matches QUIET_ON's
+        "....#....",
+        "....##...",
+        "....#.#..",
+        ".#..#..#.",
+        "..#.#.#..",
+        "...###...",
+        "...###...",
+        "..#.#.#..",
+        ".#..#..#.",
+        "....#.#..",
+        "....##...",
+        "....#....",
+    ]
+    disconnected = _grid(w, h)
+    for r, row in enumerate(rune):
+        for c, ch in enumerate(row):
+            disconnected[r][c] = ch
+    for i in range(6):
+        disconnected[3 + i][10 + i] = "#"
+        disconnected[3 + i][15 - i] = "#"
     rows = lambda g: ["".join(row) for row in g]  # noqa: E731
-    return {"QUIET_OFF": rows(on), "QUIET_ON": rows(off), "BATTERY": rows(battery)}
+    return {"QUIET_OFF": rows(on), "QUIET_ON": rows(off), "DISCONNECTED": rows(disconnected),
+            "BATTERY": rows(battery)}
 
 
 class Scale:
@@ -246,15 +279,19 @@ def build_icon_sheet(sc):
 
 # Color theme icon tints (exact Pebble 64-color palette values).
 ICON_COLORS = {
-    "QUIET_OFF": (0x55, 0xAA, 0xFF),  # GColorPictonBlue
-    "QUIET_ON": (0x55, 0xAA, 0xFF),
+    "QUIET_OFF": (0x00, 0x55, 0xAA),  # GColorCobaltBlue: dark enough to read on the gray
+    "QUIET_ON": (0x00, 0x55, 0xAA),
+    "DISCONNECTED": (0x00, 0x55, 0xAA),
     "BATTERY": (0x55, 0x55, 0x55),    # GColorDarkGray frame; fill drawn at runtime
 }
 
 
 # Icons that get a 1px white halo (outside only) in the color theme, so thin
 # strokes stay legible on the gray status row.
-HALO_ICONS = {"QUIET_OFF", "QUIET_ON", "BATTERY"}
+HALO_ICONS = {"QUIET_OFF", "QUIET_ON", "DISCONNECTED", "BATTERY"}
+# Haloed icons whose enclosed gaps are filled white as well (the Bluetooth
+# rune's small holes); the battery's interior stays clear for its fill.
+HALO_FILL_HOLES = {"DISCONNECTED"}
 
 
 def save_color_icons(sc, sheet, entries):
@@ -290,6 +327,11 @@ def save_color_icons(sc, sheet, entries):
                     for dy in (-1, 0, 1):
                         if (x + dx, y + dy) in outside:
                             img.putpixel((x + dx, y + dy), (255, 255, 255, 255))
+            if e["name"] in HALO_FILL_HOLES:
+                for y in range(h):
+                    for x in range(w):
+                        if (x, y) not in ink and (x, y) not in outside:
+                            img.putpixel((x, y), (255, 255, 255, 255))
         tint = ICON_COLORS[e["name"]] + (255,)
         for (x, y) in ink:
             img.putpixel((x, y), tint)

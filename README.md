@@ -102,10 +102,25 @@ no pixels are ever rotated.
 
 | Row | Content |
 |---|---|
-| Status | quiet-time icon · time (follows the 12h/24h setting) · battery |
+| Status | connection / quiet-time icon · time (follows the 12h/24h setting) · battery |
 | Date | `M/D` · two-letter weekday |
 | Spoken time | hour word / minute word / AM-PM (always 12-hour) |
 | Progress | bar + labels |
+
+The top-left icon shows one of three states: while the phone is
+disconnected, a Bluetooth rune with an X (drawn like the quiet-time X);
+while connected, the quiet-time speaker, with an X when quiet time is on.
+The connection comes from `connection_service` (peeked at start, redrawn on
+change). The disconnected icon is in every icon sheet (both orientations,
+base and large, and tinted with the white halo in the color theme, where
+the rune's small enclosed gaps are filled white too).
+
+![Disconnected icon on every platform and theme](docs/screenshots/disconnected/all_disconnected.png)
+
+The three states in the color theme on Pebble Time 2: disconnected, quiet
+time, sound on:
+
+![Disconnected / quiet time / sound on](docs/screenshots/disconnected/three_states_color.png)
 
 Settings (Clay): orientation (portrait/landscape), theme (color screens
 only), what the bar measures (minute/hour), and what the labels show
@@ -120,14 +135,16 @@ values to a reference recreation's title bar (`#feffff` → `#b1b6b9`):
 - Status row: white fading to light gray down to the separator row, with
   4×4 ordered dithering between the two (the palette has no grays in
   between). The separator line is hidden.
-- Quiet-time icon and progress fill: light blue (`GColorPictonBlue`). The
-  The track outline stays black.
+- Top-left icons (connection / quiet time): dark blue (`GColorCobaltBlue`),
+  so they read on the gray.
+- Progress fill: light blue (`GColorPictonBlue`). The track outline stays
+  black.
 - Battery, after the reference battery (`#626262` frame, `#A5E07F` charge
   under a highlight/shade gradient): dark gray frame (`GColorDarkGray`), and
   a charge that fills the whole interior, light green in the upper half
   (`GColorMintGreen`) and darker green in the lower half (`GColorMayGreen`),
   over a dark gray empty part (`GColorDarkGray`, the reference's `#54585b`).
-- Both status icons get a 1px white halo on the outside, so their thin
+- The status icons get a 1px white halo on the outside, so their thin
   strokes stay legible on the gray.
 
 The tinted icons are a separate sheet (`icons_color*.png`, packed for
@@ -147,7 +164,8 @@ and text ink keeps an 8px margin on both sides. W×H is the canvas: 144×168
 portrait, 168×144 landscape.
 
 - Status row 0–32: text cap at y=11, centered on W/2; icons at y=12; speaker
-  x=8; battery body from W−24 to W−7 (nub 2px past it); separator line at
+  x=8 (the connection / quiet-time icon); battery body from W−24 to W−7 (nub
+  2px past it); separator line at
   y=33.
 - Date row: cap at y=36.
 - Spoken time, centered on W/2: the block (hour cap top to AM/PM baseline,
@@ -218,8 +236,8 @@ python3 tests/check_logic.py    # host-side logic tests
 pebble build && cp build/poddle.pbw dist/
 
 tools/emu.sh start
-# pinned demo build: time date/wday mode format battery quiet 24h orientation theme
-tools/screenshot.sh /tmp/shot 15:29:18 10/1/4 1 1 65 0 0 0 0
+# pinned demo build: time date/wday mode format battery quiet 24h orientation theme disconnected
+tools/screenshot.sh /tmp/shot 15:29:18 10/1/4 1 1 65 0 0 0 0 0
 NODE_PATH=$(npm root -g) node tools/render_mock.js 2026-10-01T15:29:18 /tmp/mock
 python3 tools/compare_mock.py /tmp/mock_portrait_hour.png /tmp/shot_canvas.png /tmp/cmp
 # landscape: pass 1 as the last screenshot.sh argument, compare with /tmp/mock_canvas.png
