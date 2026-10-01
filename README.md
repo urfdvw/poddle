@@ -61,9 +61,73 @@ Things worth knowing about this path:
   firmware's serial link, and the firmware stops answering after a
   reconnect.
 
+## The face
+
+![All states](docs/screenshots/all_states.png)
+
+Canvas 168×144, rotated 90° clockwise onto the 144×168 screen. Every glyph and
+icon is a pre-rotated bitmap from one of four sprite sheets, so at runtime the
+face only blits. The only coordinate step is `canvas_to_screen()`, which moves
+a rect's origin onto the screen; no pixels are ever rotated at runtime.
+
+| Row | Content |
+|---|---|
+| Status | quiet-time icon · time (follows the 12h/24h setting) · battery |
+| Date | `M/D` · two-letter weekday |
+| Spoken time | hour word / minute word / AM-PM (always 12-hour) |
+| Progress | bar + labels; Clay settings: minute/hour × start-end/elapsed-remaining |
+
+Ticks are per-second when the bar is in minute mode or the labels show
+elapsed/remaining, and per-minute otherwise.
+
+### Layout values (for review)
+
+All in canvas pixels. Text y values are cap tops; text ink keeps an 8px
+margin on both sides.
+
+- Status row 0–32: text cap at y=11, icons at y=12, speaker x=8, battery
+  body x=144–161 (nub to 163); separator line at y=33.
+- Date row: cap at y=36.
+- Spoken-time rows: caps at y=57 / 76 / 96, centered on x=84.
+- Progress: track x=7, y=116, 154×5 (clipped corners); labels cap at y=124.
+
+These come from measuring the mockup's Frame 3 at 1×. Every element sits
+within 1px of the mockup (`tools/compare_mock.py`).
+
+![Mockup vs emulator](docs/screenshots/compare_side_by_side.png)
+
+### Font
+
+[Carthage Sans](https://github.com/csyde/carthage-fonts) Bold by Brian
+Connors, CC BY-SA 4.0 / SIL OFL (see `tools/fonts/`). It is rendered at 16px,
+where one FontStruct brick is exactly one pixel, which gives a 9px cap
+height. The longest line, "Twenty-Three", is 122px wide, so it and "O'Clock"
+(61px) fit easily. **Credit Carthage Sans in the app store description when
+publishing.**
+
+## Working on it
+
+```sh
+python3 tools/gen_assets.py     # regenerate resources/images/*.png + src/c/assets.h
+python3 tests/check_logic.py    # host-side logic tests
+pebble build && cp build/poddle.pbw dist/
+
+tools/emu.sh start
+tools/screenshot.sh /tmp/shot 15:29:18 10/1/4 1 1 65 0 0   # pinned demo build
+NODE_PATH=$(npm root -g) node tools/render_mock.js 2026-10-01T15:29:18 /tmp/mock
+python3 tools/compare_mock.py /tmp/mock_canvas.png /tmp/shot_canvas.png /tmp/cmp
+```
+
+Screenshot builds pin the time, battery and settings through
+`PODDLE_DEFINES` (see `wscript` and the `DEMO_*` blocks in `main.c`). A
+normal `pebble build` leaves them out.
+
 ## Repository layout
 
-- `src/c/` — watch face C source
-- `tools/` — SDK setup, emulator helper
+- `src/c/` — watch face (`main.c`), canvas blitting, time words, labels
+- `src/c/assets.h`, `resources/images/` — generated sprite sheets (committed)
+- `src/pkjs/` — Clay config page
+- `tools/` — asset pipeline, SDK setup, emulator/screenshot/compare helpers
+- `tests/` — logic tests
 - `dist/poddle.pbw` — committed build output
-- `docs/` — emulator screenshots
+- `docs/` — handover spec, HTML mockup, screenshots
