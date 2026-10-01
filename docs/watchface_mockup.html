@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Poddle Watchface — Design Mockup v3</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 40px 20px;
+    background: #e8e4dc;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: #2b2926;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+
+  h1 {
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6b6558;
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .rig {
+    display: flex;
+    gap: 56px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .frame-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .frame-label {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #8a8375;
+    text-align: center;
+    max-width: 340px;
+    line-height: 1.5;
+  }
+
+  /* Pebble physical body — screen is genuinely 144(w) x 168(h) portrait.
+     Content is laid out directly in that 144x168 space now (no in-mockup
+     rotation): per the spec, rotation happens once at the asset/build
+     level, not as a live transform, so the mockup no longer simulates it
+     with CSS rotate() either. */
+  .pebble-body {
+    width: 178px;
+    height: 236px;
+    background: #17181a;
+    border-radius: 22px;
+    padding: 17px 10px;
+    box-shadow:
+      0 2px 0 #000 inset,
+      0 18px 30px -12px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .pebble-body::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 34px;
+    height: 4px;
+    border-radius: 2px;
+    background: #000;
+    opacity: 0.4;
+  }
+
+  .screen-content {
+    width: 144px;
+    height: 168px;
+    background: #ffffff;
+    box-shadow: 0 0 0 1px #000;
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Courier New', monospace;
+    color: #000000;
+  }
+
+  /* Rotated variant: physical screen is still 144x168 portrait, but content
+     is authored on a 168x144 canvas and rotated 90deg once (per §1.1),
+     shown here for side-by-side comparison against the non-rotated frames. */
+  .screen-physical-rot {
+    width: 144px;
+    height: 168px;
+    background: #ffffff;
+    box-shadow: 0 0 0 1px #000;
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .screen-content-rot {
+    width: 168px;
+    height: 144px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(90deg);
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Courier New', monospace;
+    color: #000000;
+  }
+
+  .row { position: relative; z-index: 1; }
+
+  /* ROW 1: status bar — mute icon / time / battery, single row */
+  .row-status {
+    height: 34px;
+    padding: 0 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #000000;
+    font-weight: bold;
+  }
+  .status-left { display: flex; align-items: center; width: 20px; }
+  .status-mid {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1;
+  }
+  .status-right { display: flex; align-items: center; justify-content: flex-end; width: 20px; }
+
+  .icon-mute { width: 13px; height: 13px; }
+  .icon-mute svg { width: 100%; height: 100%; }
+
+  .icon-batt {
+    width: 18px; height: 9px;
+    border: 1.3px solid #000000;
+    border-radius: 1.5px;
+    position: relative;
+    padding: 1px;
+  }
+  .icon-batt::after {
+    content: '';
+    position: absolute;
+    right: -3px;
+    top: 2.5px;
+    width: 1.8px;
+    height: 3px;
+    background: #000000;
+    border-radius: 0 1px 1px 0;
+  }
+  .icon-batt-fill { background: #000000; height: 100%; border-radius: 0.5px; }
+
+  /* ROW 2: date row */
+  .row-date {
+    height: 16px;
+    padding: 0 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  /* ROW 3: text area — spelled-out time on two stacked lines (hour / minute), plus AM/PM */
+  .row-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding: 2px 8px;
+    min-height: 0;
+  }
+  .text-line-wrap {
+    max-width: 152px;
+    overflow: hidden;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .text-line {
+    font-size: 12px;
+    line-height: 1;
+    font-weight: bold;
+    white-space: nowrap;
+    display: inline-block;
+  }
+  .text-sub {
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    font-weight: bold;
+    margin-top: 3px;
+  }
+
+  /* ROW 4: progress bar — track + labels directly underneath */
+  .row-progress {
+    padding: 4px 7px 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .progress-track {
+    width: 100%;
+    height: 5px;
+    background: #ffffff;
+    border: 1px solid #000000;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill { height: 100%; background: #000000; }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .legend {
+    max-width: 640px;
+    background: #fff;
+    border: 1px solid #ddd7c8;
+    border-radius: 12px;
+    padding: 18px 22px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #3a372f;
+  }
+  .legend h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8a8375;
+    margin: 0 0 8px;
+  }
+  .legend table { border-collapse: collapse; width: 100%; }
+  .legend td { padding: 3px 8px 3px 0; vertical-align: top; }
+  .legend td.k { font-weight: 700; color: #000000; white-space: nowrap; }
+
+  .fixnote {
+    max-width: 640px;
+    background: #f4f1ea;
+    border: 1px solid #d8d2c4;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11.5px;
+    color: #6b6558;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<h1>Pebble Watchface in the style of the most popular mp3 player in year 2004 — Live Mockup</h1>
+
+<div class="fixnote">
+  This version reads your device's actual current time and updates every second. Frame 1 shows progress within the current minute (§5.1); Frames 2 and 3 show progress within the current hour (§5.2). All three use elapsed/remaining labels (§5.3 Option 2). Frame 3 is identical to Frame 2 except it applies the 90° rotation from §1.1, shown side by side for comparison. Word text is Title Case, no animation.
+</div>
+
+<div class="rig">
+
+  <!-- FRAME 1: progress within minute, Option 2 labels (elapsed / remaining) -->
+  <div class="frame-block">
+    <div class="pebble-body">
+      <div class="screen-content">
+        <div class="row row-status">
+          <div class="status-left">
+            <div class="icon-mute" id="muteIcon1" title="Not silent">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2">
+                <path d="M11 5 6 9H3v6h3l5 4V5z" fill="#000000" stroke="none"/>
+                <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                <path d="M18 6a9 9 0 0 1 0 12" />
+              </svg>
+            </div>
+          </div>
+          <div class="status-mid" id="statusTime1">--:--</div>
+          <div class="status-right">
+            <div class="icon-batt"><div class="icon-batt-fill" style="width:65%"></div></div>
+          </div>
+        </div>
+
+        <div class="row row-date">
+          <div id="dateStr1">--/--</div>
+          <div id="weekdayStr1">--</div>
+        </div>
+
+        <div class="row row-text">
+          <div class="text-line-wrap"><div class="text-line" id="hourWord1">—</div></div>
+          <div class="text-line-wrap"><div class="text-line" id="minuteWord1">—</div></div>
+          <div class="text-sub" id="ampm1">--</div>
+        </div>
+
+        <div class="row row-progress">
+          <div class="progress-track"><div class="progress-fill" id="fill1" style="width:0%"></div></div>
+          <div class="progress-labels">
+            <span id="left1">--:--</span>
+            <span id="right1">--:--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-label">Progress within minute (§5.1)<br>labels use Option 2 format<br>(elapsed / remaining, minus-prefixed)</div>
+  </div>
+
+  <!-- FRAME 2: progress Option 2 (elapsed / remaining) -->
+  <div class="frame-block">
+    <div class="pebble-body">
+      <div class="screen-content">
+        <div class="row row-status">
+          <div class="status-left">
+            <div class="icon-mute" id="muteIcon2" title="Not silent">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2">
+                <path d="M11 5 6 9H3v6h3l5 4V5z" fill="#000000" stroke="none"/>
+                <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                <path d="M18 6a9 9 0 0 1 0 12" />
+              </svg>
+            </div>
+          </div>
+          <div class="status-mid" id="statusTime2">--:--</div>
+          <div class="status-right">
+            <div class="icon-batt"><div class="icon-batt-fill" style="width:65%"></div></div>
+          </div>
+        </div>
+
+        <div class="row row-date">
+          <div id="dateStr2">--/--</div>
+          <div id="weekdayStr2">--</div>
+        </div>
+
+        <div class="row row-text">
+          <div class="text-line-wrap"><div class="text-line" id="hourWord2">—</div></div>
+          <div class="text-line-wrap"><div class="text-line" id="minuteWord2">—</div></div>
+          <div class="text-sub" id="ampm2">--</div>
+        </div>
+
+        <div class="row row-progress">
+          <div class="progress-track"><div class="progress-fill" id="fill2" style="width:0%"></div></div>
+          <div class="progress-labels">
+            <span id="left2">--:--</span>
+            <span id="right2">--:--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-label">Progress within hour (§5.2)<br>labels use Option 2 format<br>(elapsed / remaining, minus-prefixed)</div>
+  </div>
+
+  <!-- FRAME 3: same as Frame 2, but with the 90-degree rotation applied (§1.1),
+       for direct side-by-side comparison against the non-rotated frames -->
+  <div class="frame-block">
+    <div class="pebble-body">
+      <div class="screen-physical-rot">
+        <div class="screen-content-rot">
+          <div class="row row-status">
+            <div class="status-left">
+              <div class="icon-mute" id="muteIcon3" title="Not silent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2">
+                  <path d="M11 5 6 9H3v6h3l5 4V5z" fill="#000000" stroke="none"/>
+                  <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                  <path d="M18 6a9 9 0 0 1 0 12" />
+                </svg>
+              </div>
+            </div>
+            <div class="status-mid" id="statusTime3">--:--</div>
+            <div class="status-right">
+              <div class="icon-batt"><div class="icon-batt-fill" style="width:65%"></div></div>
+            </div>
+          </div>
+
+          <div class="row row-date">
+            <div id="dateStr3">--/--</div>
+            <div id="weekdayStr3">--</div>
+          </div>
+
+          <div class="row row-text">
+            <div class="text-line-wrap"><div class="text-line" id="hourWord3">—</div></div>
+            <div class="text-line-wrap"><div class="text-line" id="minuteWord3">—</div></div>
+            <div class="text-sub" id="ampm3">--</div>
+          </div>
+
+          <div class="row row-progress">
+            <div class="progress-track"><div class="progress-fill" id="fill3" style="width:0%"></div></div>
+            <div class="progress-labels">
+              <span id="left3">--:--</span>
+              <span id="right3">--:--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-label">Same as previous frame, rotated 90°<br>(§1.1 — content authored on 168×144<br>canvas, rotated once) — for comparison</div>
+  </div>
+
+</div>
+
+<div class="legend">
+  <h2>Reading this mockup against the spec</h2>
+  <table>
+    <tr><td class="k">Orientation</td><td>Frames 1–2 lay content directly at the physical 144×168 portrait size (no rotation applied), for easiest reading. Frame 3 applies the 90° rotation from §1.1 to the same content as Frame 2, for direct comparison.</td></tr>
+    <tr><td class="k">Row 1</td><td>Mute icon (left), time (center), battery (right), per §2. Time and mute state are pulled from your system clock (battery is a static placeholder since a browser can't read Pebble battery state).</td></tr>
+    <tr><td class="k">Row 2</td><td>Date as M/D (left), weekday two-letter abbreviation (right), per §3, from your system clock.</td></tr>
+    <tr><td class="k">Row 3</td><td>Spelled-out time in Title Case, split across two lines — hour word, then minute word — plus AM/PM, per §4. Computed live from the current time using the all-digits rule (o'clock only at the top of the hour).</td></tr>
+    <tr><td class="k">Row 4</td><td>Frame 1: progress within the current minute (§5.1), labels show seconds elapsed/remaining within the minute, minus-prefixed (§5.3 Option 2). Frames 2–3: progress within the current hour (§5.2), labels show minutes:seconds elapsed/remaining, minus-prefixed (§5.3 Option 2).</td></tr>
+  </table>
+</div>
+
+<script>
+function titleCase(s) {
+  return s.replace(/\b\w/g, c => c.toUpperCase());
+}
+
+const hourWords = ["Twelve","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven"];
+const teenWords = ["Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+const tensWords = {2:"Twenty",3:"Thirty",4:"Forty",5:"Fifty"};
+const onesWords = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine"];
+const weekdayAbbrev = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+function minuteWordFor(m) {
+  if (m === 0) return null; // handled as o'clock
+  if (m < 10) return "Oh " + onesWords[m];
+  if (m < 20) return teenWords[m - 10];
+  const tens = Math.floor(m / 10);
+  const ones = m % 10;
+  if (ones === 0) return tensWords[tens];
+  return tensWords[tens] + "-" + onesWords[ones].toLowerCase();
+}
+
+function pad2(n) { return n.toString().padStart(2, "0"); }
+
+function fmtClock(totalMinutes) {
+  let h = Math.floor(totalMinutes / 60) % 24;
+  let m = totalMinutes % 60;
+  let h12 = h % 12;
+  if (h12 === 0) h12 = 12;
+  return h12 + ":" + pad2(m);
+}
+
+function render() {
+  const now = new Date();
+  const h24 = now.getHours();
+  const m = now.getMinutes();
+  const s = now.getSeconds();
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  const ampm = h24 < 12 ? "AM" : "PM";
+
+  const statusTime = h12 + ":" + pad2(m);
+
+  const dateStr = (now.getMonth() + 1) + "/" + pad2(now.getDate());
+  const weekdayStr = weekdayAbbrev[now.getDay()];
+
+  const hourWord = titleCase(hourWords[h12 === 12 ? 0 : h12]);
+  let minuteWord;
+  if (m === 0) {
+    minuteWord = "O'Clock";
+  } else {
+    minuteWord = titleCase(minuteWordFor(m));
+  }
+
+  // Frame 1: progress WITHIN THE CURRENT MINUTE (§5.1), Option 2 labels (elapsed/remaining)
+  const minuteElapsedLabel = "00:" + pad2(s);
+  const minuteRemainingLabel = "-00:" + pad2(60 - s === 60 ? 0 : 60 - s);
+  const pctMinute = (s / 60) * 100;
+
+  // Frame 2 / Frame 3: progress WITHIN THE CURRENT HOUR (§5.2), Option 2 labels (elapsed/remaining)
+  const segStartMin = h24 * 60;
+  const elapsedSec = m * 60 + s;
+  const pctHour = (elapsedSec / 3600) * 100;
+  const remainingSec = 3600 - elapsedSec;
+  const elapsedLabel = pad2(m) + ":" + pad2(s);
+  const remMin = Math.floor(remainingSec / 60);
+  const remSec = remainingSec % 60;
+  const remainingLabel = "-" + pad2(remMin) + ":" + pad2(remSec);
+
+  ["1", "2", "3"].forEach(id => {
+    document.getElementById("statusTime" + id).textContent = statusTime;
+    document.getElementById("dateStr" + id).textContent = dateStr;
+    document.getElementById("weekdayStr" + id).textContent = weekdayStr;
+    document.getElementById("hourWord" + id).textContent = hourWord;
+    document.getElementById("minuteWord" + id).textContent = minuteWord;
+    document.getElementById("ampm" + id).textContent = ampm;
+  });
+
+  document.getElementById("fill1").style.width = pctMinute.toFixed(2) + "%";
+  document.getElementById("left1").textContent = minuteElapsedLabel;
+  document.getElementById("right1").textContent = minuteRemainingLabel;
+
+  document.getElementById("fill2").style.width = pctHour.toFixed(2) + "%";
+  document.getElementById("left2").textContent = elapsedLabel;
+  document.getElementById("right2").textContent = remainingLabel;
+
+  document.getElementById("fill3").style.width = pctHour.toFixed(2) + "%";
+  document.getElementById("left3").textContent = elapsedLabel;
+  document.getElementById("right3").textContent = remainingLabel;
+}
+
+render();
+setInterval(render, 1000);
+</script>
+
+</body>
+</html>

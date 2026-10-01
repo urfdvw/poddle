@@ -1,0 +1,3 @@
+Contact: urfdvw@gmail.com
+
+Font: Carthage Sans by Brian Connors (https://github.com/csyde/carthage-fonts), SIL Open Font License 1.1.

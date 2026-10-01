@@ -1,0 +1,94 @@
+{
+  "name": "poddle",
+  "author": "River",
+  "version": "1.0.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {
+    "@rebble/clay": "^1.1.0"
+  },
+  "pebble": {
+    "displayName": "Poddle",
+    "uuid": "592d00c8-47f9-4997-b258-b417b3278d0f",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "diorite",
+      "flint"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [
+      "ProgressMode",
+      "LabelFormat",
+      "Orientation"
+    ],
+    "resources": {
+      "media": [
+        {
+          "type": "bitmap",
+          "name": "SHEET_DIGITS",
+          "file": "images/digits.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_WEEKDAYS",
+          "file": "images/weekdays.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_WORDS",
+          "file": "images/words.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_ICONS",
+          "file": "images/icons.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_DIGITS_PORTRAIT",
+          "file": "images/digits_portrait.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_WEEKDAYS_PORTRAIT",
+          "file": "images/weekdays_portrait.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_WORDS_PORTRAIT",
+          "file": "images/words_portrait.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_ICONS_PORTRAIT",
+          "file": "images/icons_portrait.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "memory"
+        }
+      ]
+    },
+    "capabilities": [
+      "configurable"
+    ]
+  }
+}
