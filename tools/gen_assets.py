@@ -9,7 +9,7 @@ category into its own sprite sheet:
   B  weekdays.png  Mo Tu We Th Fr Sa Su
   C  words.png     spoken-time vocabulary + AM/PM
   -  icons.png     quiet-time on/off speaker, battery outline
-     icons_color.png  the same icons tinted for the color theme
+     icons_color.png  the same icons tinted (and haloed) for the color theme
 
 Each sheet is also written upright as NAME_portrait.png (the rotated sheet
 rotated back) for the portrait orientation, which draws the same entries
@@ -240,8 +240,8 @@ def build_icon_sheet(sc):
         sheet.paste(s, (0, y))
         y += s.height
     save_sheet(sc, sheet, "icons")
-    save_color_icons(sc, sheet, entries)
-    return {"name": "icons", "entries": entries}
+    color_entries = save_color_icons(sc, sheet, entries)
+    return {"name": "icons", "entries": entries, "color_entries": color_entries}
 
 
 # Color theme icon tints (exact Pebble 64-color palette values).
@@ -252,19 +252,52 @@ ICON_COLORS = {
 }
 
 
+# Icons that get a 1px white halo in the color theme, so thin light-blue
+# strokes stay legible on the gray status row.
+HALO_ICONS = {"QUIET_OFF", "QUIET_ON"}
+
+
 def save_color_icons(sc, sheet, entries):
-    """Same layout as icons.png, with each icon's ink tinted and the rest
-    transparent: icons_color.png (+ _portrait), color platforms only."""
-    color = Image.new("RGBA", sheet.size, (0, 0, 0, 0))
+    """Color theme icons: each icon's ink tinted, haloed icons ringed by one
+    white pixel (8-neighbour), the rest transparent. Every icon gets a 1px
+    margin for the halo, so this sheet has its own layout (returned as
+    entries; drawn 1px up and left of the B/W icon position).
+    Writes icons_color.png (+ _portrait), packed for color platforms only."""
+    strips, color_entries = [], []
+    py, max_h = 0, 0
     for e in entries:
+        w, h = e["w"] + 2, e["h"] + 2
+        img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        ink = set()
+        # Entry sits h columns by w rows in the rotated sheet; read it back
+        # in canvas orientation.
+        for cy in range(e["h"]):
+            for cx in range(e["w"]):
+                if sheet.getpixel((e["px"] + e["h"] - 1 - cy, e["py"] + cx)) == 0:
+                    ink.add((cx + 1, cy + 1))
+        if e["name"] in HALO_ICONS:
+            for (x, y) in ink:
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        if (x + dx, y + dy) not in ink:
+                            img.putpixel((x + dx, y + dy), (255, 255, 255, 255))
         tint = ICON_COLORS[e["name"]] + (255,)
-        for y in range(e["py"], e["py"] + e["w"]):
-            for x in range(e["px"], e["px"] + e["h"]):
-                if sheet.getpixel((x, y)) == 0:
-                    color.putpixel((x, y), tint)
+        for (x, y) in ink:
+            img.putpixel((x, y), tint)
+        strips.append(img.transpose(Image.Transpose.ROTATE_270))
+        color_entries.append({"name": e["name"], "py": py, "px": 0, "w": w, "h": h,
+                              "ox": -1, "adv": e["w"], "lsb": 0, "rsb": 0})
+        py += w
+        max_h = max(max_h, h)
+    color = Image.new("RGBA", (max_h, py), (0, 0, 0, 0))
+    y = 0
+    for st in strips:
+        color.paste(st, (0, y))
+        y += st.height
     color.save(os.path.join(IMG_DIR, "icons_color" + sc.suffix + ".png"), optimize=True)
     color.transpose(Image.Transpose.ROTATE_90).save(
         os.path.join(IMG_DIR, "icons_color_portrait" + sc.suffix + ".png"), optimize=True)
+    return color_entries
 
 
 def c_ident(text):
@@ -402,10 +435,18 @@ def write_header(scales):
                              f"{e['ox']:2d}, {e['adv']:3d}, {e['lsb']:2d}, {e['rsb']:2d} }},"
                              f"  // {label}")
             lines.append("};")
+        lines.append(f"// icons_color: 1px larger on every side; draw at (x - 1, y - 1).")
+        lines.append(f"static const SheetEntry ASSET_ICON_COLOR_ENTRIES_{sfx}[ICON_COUNT] = {{")
+        for e in sheets["icons"]["color_entries"]:
+            lines.append(f"  {{ {e['py']:4d}, {e['px']}, {e['w']:3d}, {e['h']:2d}, "
+                         f"{e['ox']:2d}, {e['adv']:3d}, {e['lsb']:2d}, {e['rsb']:2d} }},"
+                         f"  // {e['name']}")
+        lines.append("};")
         lines.append("")
     lines.append("#if ASSET_LARGE")
     names = ["SPACE_ADVANCE", "DIGIT_CAP_OFFSET", "WDAY_CAP_OFFSET", "WORD_CAP_OFFSET",
-             "DIGIT_ENTRIES", "WDAY_ENTRIES", "WORD_ENTRIES", "ICON_ENTRIES"]
+             "DIGIT_ENTRIES", "WDAY_ENTRIES", "WORD_ENTRIES", "ICON_ENTRIES",
+             "ICON_COLOR_ENTRIES"]
     for n in names:
         lines.append(f"#define ASSET_{n} ASSET_{n}_LARGE")
     lines.append("#else")

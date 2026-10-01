@@ -621,6 +621,41 @@
      "lsb": 0,
      "rsb": 0
     }
+   ],
+   "color_entries": [
+    {
+     "name": "QUIET_OFF",
+     "py": 0,
+     "px": 0,
+     "w": 15,
+     "h": 11,
+     "ox": -1,
+     "adv": 13,
+     "lsb": 0,
+     "rsb": 0
+    },
+    {
+     "name": "QUIET_ON",
+     "py": 15,
+     "px": 0,
+     "w": 15,
+     "h": 11,
+     "ox": -1,
+     "adv": 13,
+     "lsb": 0,
+     "rsb": 0
+    },
+    {
+     "name": "BATTERY",
+     "py": 30,
+     "px": 0,
+     "w": 22,
+     "h": 11,
+     "ox": -1,
+     "adv": 20,
+     "lsb": 0,
+     "rsb": 0
+    }
    ]
   }
  },
@@ -1242,6 +1277,41 @@
      "w": 27,
      "h": 12,
      "ox": 0,
+     "adv": 27,
+     "lsb": 0,
+     "rsb": 0
+    }
+   ],
+   "color_entries": [
+    {
+     "name": "QUIET_OFF",
+     "py": 0,
+     "px": 0,
+     "w": 19,
+     "h": 14,
+     "ox": -1,
+     "adv": 17,
+     "lsb": 0,
+     "rsb": 0
+    },
+    {
+     "name": "QUIET_ON",
+     "py": 19,
+     "px": 0,
+     "w": 19,
+     "h": 14,
+     "ox": -1,
+     "adv": 17,
+     "lsb": 0,
+     "rsb": 0
+    },
+    {
+     "name": "BATTERY",
+     "py": 38,
+     "px": 0,
+     "w": 29,
+     "h": 14,
+     "ox": -1,
      "adv": 27,
      "lsb": 0,
      "rsb": 0

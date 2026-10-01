@@ -156,6 +156,12 @@ static const SheetEntry ASSET_ICON_ENTRIES_BASE[ICON_COUNT] = {
   {   13, 0,  13,  9,  0,  13,  0,  0 },  // QUIET_ON
   {   26, 0,  20,  9,  0,  20,  0,  0 },  // BATTERY
 };
+// icons_color: 1px larger on every side; draw at (x - 1, y - 1).
+static const SheetEntry ASSET_ICON_COLOR_ENTRIES_BASE[ICON_COUNT] = {
+  {    0, 0,  15, 11, -1,  13,  0,  0 },  // QUIET_OFF
+  {   15, 0,  15, 11, -1,  13,  0,  0 },  // QUIET_ON
+  {   30, 0,  22, 11, -1,  20,  0,  0 },  // BATTERY
+};
 
 // large: Carthage Sans Bold 22px, cap height 13
 #define ASSET_SPACE_ADVANCE_LARGE 6
@@ -220,6 +226,12 @@ static const SheetEntry ASSET_ICON_ENTRIES_LARGE[ICON_COUNT] = {
   {   17, 0,  17, 12,  0,  17,  0,  0 },  // QUIET_ON
   {   34, 0,  27, 12,  0,  27,  0,  0 },  // BATTERY
 };
+// icons_color: 1px larger on every side; draw at (x - 1, y - 1).
+static const SheetEntry ASSET_ICON_COLOR_ENTRIES_LARGE[ICON_COUNT] = {
+  {    0, 0,  19, 14, -1,  17,  0,  0 },  // QUIET_OFF
+  {   19, 0,  19, 14, -1,  17,  0,  0 },  // QUIET_ON
+  {   38, 0,  29, 14, -1,  27,  0,  0 },  // BATTERY
+};
 
 #if ASSET_LARGE
 #define ASSET_SPACE_ADVANCE ASSET_SPACE_ADVANCE_LARGE
@@ -230,6 +242,7 @@ static const SheetEntry ASSET_ICON_ENTRIES_LARGE[ICON_COUNT] = {
 #define ASSET_WDAY_ENTRIES ASSET_WDAY_ENTRIES_LARGE
 #define ASSET_WORD_ENTRIES ASSET_WORD_ENTRIES_LARGE
 #define ASSET_ICON_ENTRIES ASSET_ICON_ENTRIES_LARGE
+#define ASSET_ICON_COLOR_ENTRIES ASSET_ICON_COLOR_ENTRIES_LARGE
 #else
 #define ASSET_SPACE_ADVANCE ASSET_SPACE_ADVANCE_BASE
 #define ASSET_DIGIT_CAP_OFFSET ASSET_DIGIT_CAP_OFFSET_BASE
@@ -239,4 +252,5 @@ static const SheetEntry ASSET_ICON_ENTRIES_LARGE[ICON_COUNT] = {
 #define ASSET_WDAY_ENTRIES ASSET_WDAY_ENTRIES_BASE
 #define ASSET_WORD_ENTRIES ASSET_WORD_ENTRIES_BASE
 #define ASSET_ICON_ENTRIES ASSET_ICON_ENTRIES_BASE
+#define ASSET_ICON_COLOR_ENTRIES ASSET_ICON_COLOR_ENTRIES_BASE
 #endif

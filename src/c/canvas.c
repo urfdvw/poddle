@@ -7,7 +7,8 @@ static int16_t s_sheet_h[SHEET_COUNT];  // portrait sheets: full height, before 
 static Orientation s_orientation = ORIENTATION_PORTRAIT;
 static bool s_loaded;
 #ifdef PBL_COLOR
-static GBitmap *s_color_icons;  // same layout as the icon sheet, tinted
+static GBitmap *s_color_icons;  // tinted icons, see ASSET_ICON_COLOR_ENTRIES
+static int16_t s_color_icons_h;
 static bool s_use_color_icons;
 static GBitmap *s_gradient;
 static GRect s_gradient_rect;
@@ -60,6 +61,7 @@ void canvas_init(Orientation orientation) {
   }
 #ifdef PBL_COLOR
   s_color_icons = gbitmap_create_with_resource(COLOR_ICON_RESOURCES[orientation]);
+  s_color_icons_h = s_color_icons ? gbitmap_get_bounds(s_color_icons).size.h : 0;
 #endif
   s_loaded = true;
 }
@@ -112,15 +114,8 @@ void canvas_fill_rect(GContext *ctx, int x, int y, int w, int h) {
   graphics_fill_rect(ctx, canvas_to_screen(GRect(x, y, w, h)), 0, GCornerNone);
 }
 
-static void prv_blit(GContext *ctx, int sheet, const SheetEntry *e, int x, int y) {
-  GBitmap *bmp = s_sheets[sheet];
-  GCompOp op = GCompOpAnd;  // 1-bit sheets: only the black ink lands
-#ifdef PBL_COLOR
-  if (sheet == SHEET_ICONS && s_use_color_icons && s_color_icons) {
-    bmp = s_color_icons;
-    op = GCompOpSet;  // palettized with transparency
-  }
-#endif
+static void prv_blit_bitmap(GContext *ctx, GBitmap *bmp, int sheet_h, GCompOp op,
+                            const SheetEntry *e, int x, int y) {
   if (!bmp) {
     return;
   }
@@ -129,10 +124,15 @@ static void prv_blit(GContext *ctx, int sheet, const SheetEntry *e, int x, int y
     gbitmap_set_bounds(bmp, GRect(e->px, e->py, e->h, e->w));
   } else {
     // Upright sheet: the rotated sheet turned back, so its columns are rows.
-    gbitmap_set_bounds(bmp, GRect(e->py, s_sheet_h[sheet] - e->px - e->h, e->w, e->h));
+    gbitmap_set_bounds(bmp, GRect(e->py, sheet_h - e->px - e->h, e->w, e->h));
   }
   graphics_context_set_compositing_mode(ctx, op);
   graphics_draw_bitmap_in_rect(ctx, bmp, canvas_to_screen(GRect(x, y, e->w, e->h)));
+}
+
+static void prv_blit(GContext *ctx, int sheet, const SheetEntry *e, int x, int y) {
+  // 1-bit sheets: only the black ink lands.
+  prv_blit_bitmap(ctx, s_sheets[sheet], s_sheet_h[sheet], GCompOpAnd, e, x, y);
 }
 
 static int prv_adv(const Glyph *g) {
@@ -188,6 +188,15 @@ void canvas_draw_centered(GContext *ctx, const Glyph *run, int count, int center
 }
 
 void canvas_draw_icon(GContext *ctx, int icon, int x, int y) {
+#ifdef PBL_COLOR
+  if (s_use_color_icons && s_color_icons) {
+    // Tinted sheet: palettized with transparency, each icon padded by 1px
+    // for its halo.
+    const SheetEntry *e = &ASSET_ICON_COLOR_ENTRIES[icon];
+    prv_blit_bitmap(ctx, s_color_icons, s_color_icons_h, GCompOpSet, e, x + e->ox, y - 1);
+    return;
+  }
+#endif
   prv_blit(ctx, SHEET_ICONS, &ASSET_ICON_ENTRIES[icon], x, y);
 }
 

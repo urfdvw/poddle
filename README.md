@@ -121,11 +121,13 @@ values to a reference recreation's title bar (`#feffff` → `#b1b6b9`):
   4×4 ordered dithering between the two (the palette has no grays in
   between). The separator line is hidden.
 - Quiet-time icon and progress fill: light blue (`GColorPictonBlue`). The
-  track outline stays black.
+  icon's thin strokes get a 1px white halo so they stay legible on the gray.
+  The track outline stays black.
 - Battery: green (`GColorIslamicGreen`).
 
 The tinted icons are a separate sheet (`icons_color*.png`, packed for
-basalt/emery only) drawn with `GCompOpSet`. The gradient is rendered once
+basalt/emery only, every icon padded 1px for the halo) drawn with
+`GCompOpSet`. The gradient is rendered once
 into a cached 8-bit bitmap. Text stays black.
 
 ![Color theme](docs/screenshots/color/all_color.png)
