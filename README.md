@@ -111,7 +111,7 @@ While the phone is disconnected, a second top-left icon appears next to the
 quiet-time one: a Bluetooth rune with an X, drawn like the quiet-time X
 (`connection_service`, redrawn on change). It is in every icon sheet (both
 orientations, base and large, and tinted with the white halo in the color
-theme).
+theme, where the rune's small enclosed gaps are filled white too).
 
 ![Disconnected icon on every platform and theme](docs/screenshots/disconnected/all_disconnected.png)
 

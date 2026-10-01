@@ -289,6 +289,9 @@ ICON_COLORS = {
 # Icons that get a 1px white halo (outside only) in the color theme, so thin
 # strokes stay legible on the gray status row.
 HALO_ICONS = {"QUIET_OFF", "QUIET_ON", "DISCONNECTED", "BATTERY"}
+# Haloed icons whose enclosed gaps are filled white as well (the Bluetooth
+# rune's small holes); the battery's interior stays clear for its fill.
+HALO_FILL_HOLES = {"DISCONNECTED"}
 
 
 def save_color_icons(sc, sheet, entries):
@@ -324,6 +327,11 @@ def save_color_icons(sc, sheet, entries):
                     for dy in (-1, 0, 1):
                         if (x + dx, y + dy) in outside:
                             img.putpixel((x + dx, y + dy), (255, 255, 255, 255))
+            if e["name"] in HALO_FILL_HOLES:
+                for y in range(h):
+                    for x in range(w):
+                        if (x, y) not in ink and (x, y) not in outside:
+                            img.putpixel((x, y), (255, 255, 255, 255))
         tint = ICON_COLORS[e["name"]] + (255,)
         for (x, y) in ink:
             img.putpixel((x, y), tint)
