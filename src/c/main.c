@@ -62,7 +62,7 @@
 #define BATTERY_FILL_DY 2
 #define BATTERY_FILL_W 14
 #define BATTERY_FILL_H 5
-#define BATTERY_INNER_W 16  // color theme: fill the whole interior
+#define BATTERY_INNER_W 17  // color theme: fill the whole interior
 #define BATTERY_INNER_H 7
 #endif
 
@@ -88,6 +88,7 @@ typedef enum {
 // #A5E07F fill under its highlight/shade gradient.
 #define COLOR_BATTERY_TOP GColorMintGreen
 #define COLOR_BATTERY_BOTTOM GColorMayGreen
+#define COLOR_BATTERY_EMPTY GColorDarkGray  // the reference's #54585b
 #endif
 
 static Window *s_window;
@@ -172,6 +173,8 @@ static void prv_draw_status(GContext *ctx, const struct tm *t) {
   if (color) {
     const int fill = (s_battery_percent * BATTERY_INNER_W + 50) / 100;
     const int top_h = (BATTERY_INNER_H + 1) / 2;
+    graphics_context_set_fill_color(ctx, COLOR_BATTERY_EMPTY);
+    canvas_fill_rect(ctx, battery_x + 1, STATUS_ICON_Y + 1, BATTERY_INNER_W, BATTERY_INNER_H);
     graphics_context_set_fill_color(ctx, COLOR_BATTERY_TOP);
     canvas_fill_rect(ctx, battery_x + 1, STATUS_ICON_Y + 1, fill, top_h);
     graphics_context_set_fill_color(ctx, COLOR_BATTERY_BOTTOM);

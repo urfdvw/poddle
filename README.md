@@ -125,7 +125,8 @@ values to a reference recreation's title bar (`#feffff` → `#b1b6b9`):
 - Battery, after the reference battery (`#626262` frame, `#A5E07F` charge
   under a highlight/shade gradient): dark gray frame (`GColorDarkGray`), and
   a charge that fills the whole interior, light green in the upper half
-  (`GColorMintGreen`) and darker green in the lower half (`GColorMayGreen`).
+  (`GColorMintGreen`) and darker green in the lower half (`GColorMayGreen`),
+  over a dark gray empty part (`GColorDarkGray`, the reference's `#54585b`).
 - Both status icons get a 1px white halo on the outside, so their thin
   strokes stay legible on the gray.
 
