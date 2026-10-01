@@ -16,7 +16,9 @@
     "enableMultiJS": true,
     "targetPlatforms": [
       "aplite",
+      "basalt",
       "diorite",
+      "emery",
       "flint"
     ],
     "watchapp": {
@@ -25,7 +27,8 @@
     "messageKeys": [
       "ProgressMode",
       "LabelFormat",
-      "Orientation"
+      "Orientation",
+      "Theme"
     ],
     "resources": {
       "media": [
@@ -84,6 +87,24 @@
           "file": "images/icons_portrait.png",
           "memoryFormat": "1Bit",
           "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_ICONS_COLOR",
+          "file": "images/icons_color.png",
+          "targetPlatforms": [
+            "basalt",
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "SHEET_ICONS_COLOR_PORTRAIT",
+          "file": "images/icons_color_portrait.png",
+          "targetPlatforms": [
+            "basalt",
+            "emery"
+          ]
         }
       ]
     },

@@ -2,14 +2,15 @@
 
 #include <pebble.h>
 
-// The face is laid out on a design canvas: 144x168 in portrait (the screen
-// itself) or 168x144 in landscape. Landscape loads sprite sheets whose
-// glyphs and icons were rotated 90 degrees clockwise at build time, so a
-// canvas rect only has its origin moved onto the physical 144x168 screen
-// (canvas_to_screen); portrait loads the upright sheets and draws 1:1.
-// Either way no pixels are rotated at runtime.
-#define SCREEN_W 144
-#define SCREEN_H 168
+// The face is laid out on a design canvas: the screen itself in portrait,
+// or the screen turned sideways in landscape (e.g. 168x144 for a 144x168
+// screen). Landscape loads sprite sheets whose glyphs and icons were
+// rotated 90 degrees clockwise at build time, so a canvas rect only has its
+// origin moved onto the physical screen (canvas_to_screen); portrait loads
+// the upright sheets and draws 1:1. Either way no pixels are rotated at
+// runtime.
+#define SCREEN_W PBL_DISPLAY_WIDTH
+#define SCREEN_H PBL_DISPLAY_HEIGHT
 
 typedef enum {
   ORIENTATION_PORTRAIT = 0,
@@ -38,6 +39,9 @@ typedef struct {
 
 // Loads the sheets for the orientation (reloads if it changed).
 void canvas_init(Orientation orientation);
+// Color theme: icons come from the tinted icon sheet (color platforms only;
+// a no-op elsewhere).
+void canvas_set_color_icons(bool enabled);
 void canvas_deinit(void);
 int canvas_width(void);
 int canvas_height(void);
@@ -54,6 +58,12 @@ void canvas_draw_centered(GContext *ctx, const Glyph *run, int count, int center
                           int cap_top);
 // Icons are drawn by their top-left corner.
 void canvas_draw_icon(GContext *ctx, int icon, int x, int y);
+
+#ifdef PBL_COLOR
+// Vertical gradient (top row `top`, bottom row `bottom`), ordered-dithered
+// between the two colors. Rendered once into a cached bitmap per rect.
+void canvas_draw_gradient(GContext *ctx, GRect r, GColor top, GColor bottom);
+#endif
 
 // Converts a string of "0-9 : / -" into digit glyphs; returns the count.
 int canvas_digits(const char *text, Glyph *out, int max);

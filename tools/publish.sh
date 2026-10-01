@@ -6,13 +6,14 @@
 # --non-interactive is what makes pebble publish use --screenshots files
 # instead of capturing its own; --description only takes effect when the
 # store app is first created.
-# Screenshots are uploaded in the order given: portrait first, so it is the
-# leading listing image; pass --replace-screenshots to swap an existing set.
+# Screenshots are uploaded in the order given (five states per platform,
+# portrait first, so it is the leading listing image); pass --replace-screenshots to swap an existing set.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 shots=()
-for platform in aplite diorite flint; do
-  shots+=("store/screenshots/${platform}_1_portrait.png" "store/screenshots/${platform}_2_landscape.png")
+for platform in aplite basalt diorite emery flint; do
+  # PLATFORM_N_*.png in N order; N=1 (portrait) leads the listing.
+  shots+=(store/screenshots/"${platform}"_[0-9]_*.png)
 done
 pebble publish \
   --description "$(cat store/description.txt)" \

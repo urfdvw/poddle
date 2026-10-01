@@ -3,10 +3,10 @@
 
 #include <stdint.h>
 
-// Sprite sheet entry. w/h are the strip's size on the 168x144 design
-// canvas; (px, py) is its top-left in the (pre-rotated) sheet bitmap,
-// where it occupies h columns by w rows. The strip starts ox columns
-// from the pen position and the pen then moves adv columns. Ink spans
+// Sprite sheet entry. w/h are the strip's size on the design canvas;
+// (px, py) is its top-left in the (pre-rotated) sheet bitmap, where it
+// occupies h columns by w rows. The strip starts ox columns from the
+// pen position and the pen then moves adv columns. Ink spans
 // [pen + lsb, pen + adv - rsb).
 typedef struct {
   uint16_t py;
@@ -19,12 +19,14 @@ typedef struct {
   int8_t rsb;
 } SheetEntry;
 
-#define ASSET_SPACE_ADVANCE 4
-#define ASSET_AMPM_TRACKING 2
+// The large set (NAME~emery.png) is what the SDK packs for the
+// 200x228 Pebble Time 2; every other target gets the base set.
+#if defined(PBL_DISPLAY_WIDTH) && PBL_DISPLAY_WIDTH >= 200
+#define ASSET_LARGE 1
+#else
+#define ASSET_LARGE 0
+#endif
 
-// digits.png
-#define ASSET_DIGIT_BAND_H 9
-#define ASSET_DIGIT_CAP_OFFSET 0  // rows from band top to cap top
 enum {
   DIGIT_0 = 0,
   DIGIT_1 = 1,
@@ -42,9 +44,6 @@ enum {
   DIGIT_COUNT
 };
 
-// weekdays.png
-#define ASSET_WDAY_BAND_H 9
-#define ASSET_WDAY_CAP_OFFSET 0  // rows from band top to cap top
 enum {
   WDAY_SU = 0,
   WDAY_MO = 1,
@@ -56,9 +55,6 @@ enum {
   WDAY_COUNT
 };
 
-// words.png
-#define ASSET_WORD_BAND_H 12
-#define ASSET_WORD_CAP_OFFSET 0  // rows from band top to cap top
 enum {
   WORD_ONE = 0,
   WORD_TWO = 1,
@@ -90,7 +86,6 @@ enum {
   WORD_COUNT
 };
 
-// icons.png
 enum {
   ICON_QUIET_OFF = 0,
   ICON_QUIET_ON = 1,
@@ -98,7 +93,12 @@ enum {
   ICON_COUNT
 };
 
-static const SheetEntry ASSET_DIGIT_ENTRIES[DIGIT_COUNT] = {
+// base: Carthage Sans Bold 16px, cap height 9
+#define ASSET_SPACE_ADVANCE_BASE 4
+#define ASSET_DIGIT_CAP_OFFSET_BASE 0  // rows from band top to cap top
+#define ASSET_WDAY_CAP_OFFSET_BASE 0  // rows from band top to cap top
+#define ASSET_WORD_CAP_OFFSET_BASE 0  // rows from band top to cap top
+static const SheetEntry ASSET_DIGIT_ENTRIES_BASE[DIGIT_COUNT] = {
   {    0, 0,  10,  9,  0,  10,  0,  2 },  // 0
   {   10, 0,   7,  9,  0,   7,  0,  2 },  // 1
   {   17, 0,  10,  9,  0,  10,  0,  2 },  // 2
@@ -113,8 +113,7 @@ static const SheetEntry ASSET_DIGIT_ENTRIES[DIGIT_COUNT] = {
   {  101, 0,   8,  9,  0,   8,  0,  2 },  // /
   {  109, 0,   8,  9,  0,   8,  1,  2 },  // -
 };
-
-static const SheetEntry ASSET_WDAY_ENTRIES[WDAY_COUNT] = {
+static const SheetEntry ASSET_WDAY_ENTRIES_BASE[WDAY_COUNT] = {
   {    0, 0,  19,  9,  0,  19,  0,  2 },  // Su
   {   19, 0,  25,  9,  0,  25,  0,  2 },  // Mo
   {   44, 0,  21,  9,  0,  21,  0,  2 },  // Tu
@@ -123,8 +122,7 @@ static const SheetEntry ASSET_WDAY_ENTRIES[WDAY_COUNT] = {
   {  113, 0,  19,  9,  0,  19,  0,  2 },  // Fr
   {  132, 0,  19,  9,  0,  19,  0,  2 },  // Sa
 };
-
-static const SheetEntry ASSET_WORD_ENTRIES[WORD_COUNT] = {
+static const SheetEntry ASSET_WORD_ENTRIES_BASE[WORD_COUNT] = {
   {    0, 0,  32, 12,  0,  32,  0,  2 },  // One
   {   32, 0,  36, 12,  0,  36,  0,  2 },  // Two
   {   68, 0,  51, 12,  0,  51,  0,  2 },  // Three
@@ -153,9 +151,106 @@ static const SheetEntry ASSET_WORD_ENTRIES[WORD_COUNT] = {
   { 1289, 0,  28, 12,  0,  28,  0,  2 },  // AM
   { 1317, 0,  26, 12,  0,  26,  0,  2 },  // PM
 };
-
-static const SheetEntry ASSET_ICON_ENTRIES[ICON_COUNT] = {
+static const SheetEntry ASSET_ICON_ENTRIES_BASE[ICON_COUNT] = {
   {    0, 0,  13,  9,  0,  13,  0,  0 },  // QUIET_OFF
   {   13, 0,  13,  9,  0,  13,  0,  0 },  // QUIET_ON
   {   26, 0,  20,  9,  0,  20,  0,  0 },  // BATTERY
 };
+// icons_color: 1px larger on every side; draw at (x - 1, y - 1).
+static const SheetEntry ASSET_ICON_COLOR_ENTRIES_BASE[ICON_COUNT] = {
+  {    0, 0,  15, 11, -1,  13,  0,  0 },  // QUIET_OFF
+  {   15, 0,  15, 11, -1,  13,  0,  0 },  // QUIET_ON
+  {   30, 0,  22, 11, -1,  20,  0,  0 },  // BATTERY
+};
+
+// large: Carthage Sans Bold 22px, cap height 13
+#define ASSET_SPACE_ADVANCE_LARGE 6
+#define ASSET_DIGIT_CAP_OFFSET_LARGE 0  // rows from band top to cap top
+#define ASSET_WDAY_CAP_OFFSET_LARGE 0  // rows from band top to cap top
+#define ASSET_WORD_CAP_OFFSET_LARGE 0  // rows from band top to cap top
+static const SheetEntry ASSET_DIGIT_ENTRIES_LARGE[DIGIT_COUNT] = {
+  {    0, 0,  14, 13,  0,  14,  0,  3 },  // 0
+  {   14, 0,  10, 13,  0,  10,  0,  3 },  // 1
+  {   24, 0,  14, 13,  0,  14,  0,  3 },  // 2
+  {   38, 0,  14, 13,  0,  14,  0,  3 },  // 3
+  {   52, 0,  14, 13,  0,  14,  0,  2 },  // 4
+  {   66, 0,  13, 13, -1,  12, -1,  2 },  // 5
+  {   79, 0,  14, 13,  0,  14,  0,  3 },  // 6
+  {   93, 0,  14, 13,  0,  14,  0,  3 },  // 7
+  {  107, 0,  14, 13,  0,  14,  0,  3 },  // 8
+  {  121, 0,  14, 13,  0,  14,  0,  3 },  // 9
+  {  135, 0,   6, 13,  0,   6,  0,  3 },  // :
+  {  141, 0,  12, 13, -1,  11, -1,  4 },  // /
+  {  153, 0,  11, 13,  0,  11,  1,  3 },  // -
+};
+static const SheetEntry ASSET_WDAY_ENTRIES_LARGE[WDAY_COUNT] = {
+  {    0, 0,  26, 13,  0,  26,  0,  3 },  // Su
+  {   26, 0,  34, 13,  0,  34,  0,  3 },  // Mo
+  {   60, 0,  29, 13,  0,  29,  0,  3 },  // Tu
+  {   89, 0,  37, 13,  0,  37,  0,  3 },  // We
+  {  126, 0,  29, 13,  0,  29,  0,  3 },  // Th
+  {  155, 0,  26, 13,  0,  26,  0,  3 },  // Fr
+  {  181, 0,  26, 13,  0,  26,  0,  3 },  // Sa
+};
+static const SheetEntry ASSET_WORD_ENTRIES_LARGE[WORD_COUNT] = {
+  {    0, 0,  44, 17,  0,  44,  0,  3 },  // One
+  {   44, 0,  50, 17,  0,  50,  0,  4 },  // Two
+  {   94, 0,  70, 17,  0,  70,  0,  3 },  // Three
+  {  164, 0,  55, 17,  0,  55,  0,  3 },  // Four
+  {  219, 0,  48, 17,  0,  48,  0,  3 },  // Five
+  {  267, 0,  34, 17,  0,  34,  0,  3 },  // Six
+  {  301, 0,  69, 17,  0,  69,  0,  3 },  // Seven
+  {  370, 0,  58, 17,  0,  58,  0,  3 },  // Eight
+  {  428, 0,  48, 17,  0,  48,  0,  3 },  // Nine
+  {  476, 0,  43, 17,  0,  43,  0,  3 },  // Ten
+  {  519, 0,  76, 17,  0,  76,  0,  3 },  // Eleven
+  {  595, 0,  84, 17,  0,  84,  0,  3 },  // Twelve
+  {  679, 0, 102, 17,  0, 102,  0,  3 },  // Thirteen
+  {  781, 0, 107, 17,  0, 107,  0,  2 },  // Fourteen
+  {  888, 0,  82, 17,  0,  82,  0,  2 },  // Fifteen
+  {  970, 0,  87, 17,  0,  87,  0,  3 },  // Sixteen
+  { 1057, 0, 121, 17,  0, 121,  0,  3 },  // Seventeen
+  { 1178, 0,  99, 17,  0,  99,  0,  3 },  // Eighteen
+  { 1277, 0, 100, 17,  0, 100,  0,  2 },  // Nineteen
+  { 1377, 0,  87, 17,  0,  87,  0,  3 },  // Twenty
+  { 1464, 0,  74, 17,  0,  74,  0,  2 },  // Thirty
+  { 1538, 0,  66, 17,  0,  66,  0,  3 },  // Forty
+  { 1604, 0,  55, 17,  0,  55,  0,  3 },  // Fifty
+  { 1659, 0,  30, 17,  0,  30,  0,  2 },  // Oh
+  { 1689, 0,  84, 17,  0,  84,  0,  3 },  // O'Clock
+  { 1773, 0,  38, 17,  0,  38,  0,  3 },  // AM
+  { 1811, 0,  36, 17,  0,  36,  0,  3 },  // PM
+};
+static const SheetEntry ASSET_ICON_ENTRIES_LARGE[ICON_COUNT] = {
+  {    0, 0,  17, 12,  0,  17,  0,  0 },  // QUIET_OFF
+  {   17, 0,  17, 12,  0,  17,  0,  0 },  // QUIET_ON
+  {   34, 0,  27, 12,  0,  27,  0,  0 },  // BATTERY
+};
+// icons_color: 1px larger on every side; draw at (x - 1, y - 1).
+static const SheetEntry ASSET_ICON_COLOR_ENTRIES_LARGE[ICON_COUNT] = {
+  {    0, 0,  19, 14, -1,  17,  0,  0 },  // QUIET_OFF
+  {   19, 0,  19, 14, -1,  17,  0,  0 },  // QUIET_ON
+  {   38, 0,  29, 14, -1,  27,  0,  0 },  // BATTERY
+};
+
+#if ASSET_LARGE
+#define ASSET_SPACE_ADVANCE ASSET_SPACE_ADVANCE_LARGE
+#define ASSET_DIGIT_CAP_OFFSET ASSET_DIGIT_CAP_OFFSET_LARGE
+#define ASSET_WDAY_CAP_OFFSET ASSET_WDAY_CAP_OFFSET_LARGE
+#define ASSET_WORD_CAP_OFFSET ASSET_WORD_CAP_OFFSET_LARGE
+#define ASSET_DIGIT_ENTRIES ASSET_DIGIT_ENTRIES_LARGE
+#define ASSET_WDAY_ENTRIES ASSET_WDAY_ENTRIES_LARGE
+#define ASSET_WORD_ENTRIES ASSET_WORD_ENTRIES_LARGE
+#define ASSET_ICON_ENTRIES ASSET_ICON_ENTRIES_LARGE
+#define ASSET_ICON_COLOR_ENTRIES ASSET_ICON_COLOR_ENTRIES_LARGE
+#else
+#define ASSET_SPACE_ADVANCE ASSET_SPACE_ADVANCE_BASE
+#define ASSET_DIGIT_CAP_OFFSET ASSET_DIGIT_CAP_OFFSET_BASE
+#define ASSET_WDAY_CAP_OFFSET ASSET_WDAY_CAP_OFFSET_BASE
+#define ASSET_WORD_CAP_OFFSET ASSET_WORD_CAP_OFFSET_BASE
+#define ASSET_DIGIT_ENTRIES ASSET_DIGIT_ENTRIES_BASE
+#define ASSET_WDAY_ENTRIES ASSET_WDAY_ENTRIES_BASE
+#define ASSET_WORD_ENTRIES ASSET_WORD_ENTRIES_BASE
+#define ASSET_ICON_ENTRIES ASSET_ICON_ENTRIES_BASE
+#define ASSET_ICON_COLOR_ENTRIES ASSET_ICON_COLOR_ENTRIES_BASE
+#endif
