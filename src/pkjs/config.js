@@ -19,6 +19,17 @@ module.exports = [
           { label: 'Portrait', value: '0' },
           { label: 'Landscape', value: '1' }
         ]
+      },
+      {
+        type: 'select',
+        messageKey: 'Theme',
+        label: 'Theme',
+        defaultValue: '0',
+        capabilities: ['COLOR'],
+        options: [
+          { label: 'Black & white', value: '0' },
+          { label: 'Color', value: '1' }
+        ]
       }
     ]
   },

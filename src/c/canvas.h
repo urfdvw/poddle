@@ -39,6 +39,9 @@ typedef struct {
 
 // Loads the sheets for the orientation (reloads if it changed).
 void canvas_init(Orientation orientation);
+// Color theme: icons come from the tinted icon sheet (color platforms only;
+// a no-op elsewhere).
+void canvas_set_color_icons(bool enabled);
 void canvas_deinit(void);
 int canvas_width(void);
 int canvas_height(void);
@@ -55,6 +58,12 @@ void canvas_draw_centered(GContext *ctx, const Glyph *run, int count, int center
                           int cap_top);
 // Icons are drawn by their top-left corner.
 void canvas_draw_icon(GContext *ctx, int icon, int x, int y);
+
+#ifdef PBL_COLOR
+// Vertical gradient (top row `top`, bottom row `bottom`), ordered-dithered
+// between the two colors. Rendered once into a cached bitmap per rect.
+void canvas_draw_gradient(GContext *ctx, GRect r, GColor top, GColor bottom);
+#endif
 
 // Converts a string of "0-9 : / -" into digit glyphs; returns the count.
 int canvas_digits(const char *text, Glyph *out, int max);

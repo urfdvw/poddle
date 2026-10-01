@@ -9,6 +9,7 @@ category into its own sprite sheet:
   B  weekdays.png  Mo Tu We Th Fr Sa Su
   C  words.png     spoken-time vocabulary + AM/PM
   -  icons.png     quiet-time on/off speaker, battery outline
+     icons_color.png  the same icons tinted for the color theme
 
 Each sheet is also written upright as NAME_portrait.png (the rotated sheet
 rotated back) for the portrait orientation, which draws the same entries
@@ -239,7 +240,31 @@ def build_icon_sheet(sc):
         sheet.paste(s, (0, y))
         y += s.height
     save_sheet(sc, sheet, "icons")
+    save_color_icons(sc, sheet, entries)
     return {"name": "icons", "entries": entries}
+
+
+# Color theme icon tints (exact Pebble 64-color palette values).
+ICON_COLORS = {
+    "QUIET_OFF": (0x55, 0xAA, 0xFF),  # GColorPictonBlue
+    "QUIET_ON": (0x55, 0xAA, 0xFF),
+    "BATTERY": (0x00, 0xAA, 0x00),    # GColorIslamicGreen
+}
+
+
+def save_color_icons(sc, sheet, entries):
+    """Same layout as icons.png, with each icon's ink tinted and the rest
+    transparent: icons_color.png (+ _portrait), color platforms only."""
+    color = Image.new("RGBA", sheet.size, (0, 0, 0, 0))
+    for e in entries:
+        tint = ICON_COLORS[e["name"]] + (255,)
+        for y in range(e["py"], e["py"] + e["w"]):
+            for x in range(e["px"], e["px"] + e["h"]):
+                if sheet.getpixel((x, y)) == 0:
+                    color.putpixel((x, y), tint)
+    color.save(os.path.join(IMG_DIR, "icons_color" + sc.suffix + ".png"), optimize=True)
+    color.transpose(Image.Transpose.ROTATE_90).save(
+        os.path.join(IMG_DIR, "icons_color_portrait" + sc.suffix + ".png"), optimize=True)
 
 
 def c_ident(text):

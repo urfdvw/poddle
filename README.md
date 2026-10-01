@@ -107,8 +107,28 @@ no pixels are ever rotated.
 | Spoken time | hour word / minute word / AM-PM (always 12-hour) |
 | Progress | bar + labels |
 
-Settings (Clay): orientation (portrait/landscape), what the bar measures
-(minute/hour), and what the labels show (start-end/elapsed-remaining).
+Settings (Clay): orientation (portrait/landscape), theme (color screens
+only), what the bar measures (minute/hour), and what the labels show
+(start-end/elapsed-remaining).
+
+### Color theme (basalt, emery)
+
+Color screens can switch from black & white to a color theme, modeled on the
+color UI of the same player line. The colors are the nearest 64-color palette
+values to a reference recreation's title bar (`#feffff` → `#b1b6b9`):
+
+- Status row: white fading to light gray down to the separator row, with
+  4×4 ordered dithering between the two (the palette has no grays in
+  between). The separator line is hidden.
+- Quiet-time icon and progress fill: light blue (`GColorPictonBlue`). The
+  track outline stays black.
+- Battery: green (`GColorIslamicGreen`).
+
+The tinted icons are a separate sheet (`icons_color*.png`, packed for
+basalt/emery only) drawn with `GCompOpSet`. The gradient is rendered once
+into a cached 8-bit bitmap. Text stays black.
+
+![Color theme](docs/screenshots/color/all_color.png)
 
 Ticks are per-second when the bar is in minute mode or the labels show
 elapsed/remaining, and per-minute otherwise.
@@ -174,8 +194,8 @@ python3 tests/check_logic.py    # host-side logic tests
 pebble build && cp build/poddle.pbw dist/
 
 tools/emu.sh start
-# pinned demo build: time date/wday mode format battery quiet 24h orientation
-tools/screenshot.sh /tmp/shot 15:29:18 10/1/4 1 1 65 0 0 0
+# pinned demo build: time date/wday mode format battery quiet 24h orientation theme
+tools/screenshot.sh /tmp/shot 15:29:18 10/1/4 1 1 65 0 0 0 0
 NODE_PATH=$(npm root -g) node tools/render_mock.js 2026-10-01T15:29:18 /tmp/mock
 python3 tools/compare_mock.py /tmp/mock_portrait_hour.png /tmp/shot_canvas.png /tmp/cmp
 # landscape: pass 1 as the last screenshot.sh argument, compare with /tmp/mock_canvas.png

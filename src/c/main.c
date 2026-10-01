@@ -65,11 +65,28 @@
 #define PERSIST_KEY_PROGRESS_MODE 1
 #define PERSIST_KEY_LABEL_FORMAT 2
 #define PERSIST_KEY_ORIENTATION 3
+#define PERSIST_KEY_THEME 4
+
+// Theme (Clay). The color theme only exists on color screens.
+typedef enum {
+  THEME_BW = 0,
+  THEME_COLOR = 1,
+} Theme;
+
+#ifdef PBL_COLOR
+// Silver title bar: white fading to light gray (the reference bar runs
+// #feffff -> #b1b6b9; these are the nearest palette colors).
+#define COLOR_STATUS_TOP GColorWhite
+#define COLOR_STATUS_BOTTOM GColorLightGray
+#define COLOR_ACCENT GColorPictonBlue  // quiet-time icon (tinted sheet) and progress
+#define COLOR_BATTERY GColorIslamicGreen
+#endif
 
 static Window *s_window;
 static ProgressMode s_progress_mode = PROGRESS_MODE_HOUR;
 static LabelFormat s_label_format = LABEL_FORMAT_ELAPSED;
 static Orientation s_orientation = ORIENTATION_PORTRAIT;
+static Theme s_theme = THEME_BW;
 static uint8_t s_battery_percent = 100;
 static TimeUnits s_tick_units;
 
@@ -115,22 +132,45 @@ static bool prv_quiet_time(void) {
   return quiet_time_is_active();
 }
 
+static bool prv_color_theme(void) {
+#ifdef PBL_COLOR
+  return s_theme == THEME_COLOR;
+#else
+  return false;
+#endif
+}
+
 static void prv_draw_status(GContext *ctx, const struct tm *t) {
+  const int w = canvas_width();
+  const bool color = prv_color_theme();
+#ifdef PBL_COLOR
+  if (color) {
+    // Gray gradient down to the separator row, which it replaces.
+    canvas_draw_gradient(ctx, GRect(0, 0, w, SEPARATOR_Y + 1), COLOR_STATUS_TOP,
+                         COLOR_STATUS_BOTTOM);
+  }
+#endif
+
   canvas_draw_icon(ctx, prv_quiet_time() ? ICON_QUIET_ON : ICON_QUIET_OFF, STATUS_ICON_X,
                    STATUS_ICON_Y);
 
   char buf[LABEL_BUF_SIZE];
   format_clock(buf, t->tm_hour, t->tm_min, prv_is_24h());
-  const int w = canvas_width();
   prv_draw_text(ctx, buf, w / 2, STATUS_CAP_Y, GAlignCenter);
 
   const int battery_x = w - BATTERY_INSET;
   canvas_draw_icon(ctx, ICON_BATTERY, battery_x, STATUS_ICON_Y);
   int fill = (s_battery_percent * BATTERY_FILL_W + 50) / 100;
+#ifdef PBL_COLOR
+  graphics_context_set_fill_color(ctx, color ? COLOR_BATTERY : GColorBlack);
+#endif
   canvas_fill_rect(ctx, battery_x + BATTERY_FILL_DX, STATUS_ICON_Y + BATTERY_FILL_DY, fill,
                    BATTERY_FILL_H);
+  graphics_context_set_fill_color(ctx, GColorBlack);
 
-  canvas_fill_rect(ctx, 0, SEPARATOR_Y, w, 1);
+  if (!color) {
+    canvas_fill_rect(ctx, 0, SEPARATOR_Y, w, 1);
+  }
 }
 
 static void prv_draw_date(GContext *ctx, const struct tm *t) {
@@ -175,7 +215,22 @@ static void prv_draw_progress(GContext *ctx, const struct tm *t) {
   canvas_fill_rect(ctx, TRACK_X + 1, track_y + TRACK_H - 1, track_w - 2, 1);
   canvas_fill_rect(ctx, TRACK_X, track_y + 1, 1, TRACK_H - 2);
   canvas_fill_rect(ctx, TRACK_X + track_w - 1, track_y + 1, 1, TRACK_H - 2);
-  canvas_fill_rect(ctx, TRACK_X, track_y + 1, track_w * info.num / info.den, TRACK_H - 2);
+  const int fill_w = track_w * info.num / info.den;
+#ifdef PBL_COLOR
+  if (prv_color_theme()) {
+    // Inside the outline only, so the black frame stays intact.
+    graphics_context_set_fill_color(ctx, COLOR_ACCENT);
+    int inner = fill_w - 1;
+    if (inner > track_w - 2) {
+      inner = track_w - 2;
+    }
+    canvas_fill_rect(ctx, TRACK_X + 1, track_y + 1, inner, TRACK_H - 2);
+    graphics_context_set_fill_color(ctx, GColorBlack);
+  } else
+#endif
+  {
+    canvas_fill_rect(ctx, TRACK_X, track_y + 1, fill_w, TRACK_H - 2);
+  }
 
   prv_draw_text(ctx, info.left, MARGIN_TEXT, label_y, GAlignLeft);
   prv_draw_text(ctx, info.right, w - MARGIN_TEXT, label_y, GAlignRight);
@@ -256,6 +311,12 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
     persist_write_int(PERSIST_KEY_ORIENTATION, s_orientation);
     canvas_init(s_orientation);
   }
+  Tuple *theme = dict_find(iter, MESSAGE_KEY_Theme);
+  if (theme) {
+    s_theme = prv_tuple_int(theme) == THEME_COLOR ? THEME_COLOR : THEME_BW;
+    persist_write_int(PERSIST_KEY_THEME, s_theme);
+    canvas_set_color_icons(prv_color_theme());
+  }
   prv_subscribe_ticks();
   layer_mark_dirty(window_get_root_layer(s_window));
 }
@@ -265,6 +326,7 @@ static void prv_load_settings(void) {
   s_progress_mode = DEMO_PROGRESS_MODE;
   s_label_format = DEMO_LABEL_FORMAT;
   s_orientation = DEMO_ORIENTATION;
+  s_theme = DEMO_THEME;
   return;
 #endif
   if (persist_exists(PERSIST_KEY_PROGRESS_MODE)) {
@@ -282,11 +344,15 @@ static void prv_load_settings(void) {
                         ? ORIENTATION_LANDSCAPE
                         : ORIENTATION_PORTRAIT;
   }
+  if (persist_exists(PERSIST_KEY_THEME)) {
+    s_theme = persist_read_int(PERSIST_KEY_THEME) == THEME_COLOR ? THEME_COLOR : THEME_BW;
+  }
 }
 
 static void prv_init(void) {
   prv_load_settings();
   canvas_init(s_orientation);
+  canvas_set_color_icons(prv_color_theme());
 
   s_window = window_create();
   layer_set_update_proc(window_get_root_layer(s_window), prv_update_proc);
