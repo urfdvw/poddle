@@ -252,9 +252,9 @@ ICON_COLORS = {
 }
 
 
-# Icons that get a 1px white halo in the color theme, so thin light-blue
+# Icons that get a 1px white halo in the color theme, so thin colored
 # strokes stay legible on the gray status row.
-HALO_ICONS = {"QUIET_OFF", "QUIET_ON"}
+HALO_ICONS = {"QUIET_OFF", "QUIET_ON", "BATTERY"}
 
 
 def save_color_icons(sc, sheet, entries):
