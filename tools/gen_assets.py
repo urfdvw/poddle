@@ -248,11 +248,11 @@ def build_icon_sheet(sc):
 ICON_COLORS = {
     "QUIET_OFF": (0x55, 0xAA, 0xFF),  # GColorPictonBlue
     "QUIET_ON": (0x55, 0xAA, 0xFF),
-    "BATTERY": (0x00, 0xAA, 0x00),    # GColorIslamicGreen
+    "BATTERY": (0x55, 0x55, 0x55),    # GColorDarkGray frame; fill drawn at runtime
 }
 
 
-# Icons that get a 1px white halo in the color theme, so thin colored
+# Icons that get a 1px white halo (outside only) in the color theme, so thin
 # strokes stay legible on the gray status row.
 HALO_ICONS = {"QUIET_OFF", "QUIET_ON", "BATTERY"}
 
@@ -276,10 +276,19 @@ def save_color_icons(sc, sheet, entries):
                 if sheet.getpixel((e["px"] + e["h"] - 1 - cy, e["py"] + cx)) == 0:
                     ink.add((cx + 1, cy + 1))
         if e["name"] in HALO_ICONS:
+            # Only on the outside: background reachable from the padded edge
+            # (keeps the battery's interior clear for its fill).
+            outside, todo = set(), [(0, 0)]
+            while todo:
+                p = todo.pop()
+                if p in outside or p in ink or not (0 <= p[0] < w and 0 <= p[1] < h):
+                    continue
+                outside.add(p)
+                todo += [(p[0] + 1, p[1]), (p[0] - 1, p[1]), (p[0], p[1] + 1), (p[0], p[1] - 1)]
             for (x, y) in ink:
                 for dx in (-1, 0, 1):
                     for dy in (-1, 0, 1):
-                        if (x + dx, y + dy) not in ink:
+                        if (x + dx, y + dy) in outside:
                             img.putpixel((x + dx, y + dy), (255, 255, 255, 255))
         tint = ICON_COLORS[e["name"]] + (255,)
         for (x, y) in ink:

@@ -35,6 +35,8 @@
 #define BATTERY_FILL_DY 2
 #define BATTERY_FILL_W 21
 #define BATTERY_FILL_H 8
+#define BATTERY_INNER_W 23  // color theme: fill the whole interior
+#define BATTERY_INNER_H 10
 #else
 // 144x168 screens, 16px sprites (9px caps). Values measured off the mockup:
 // Frames 1-2 for portrait, Frame 3 for landscape; the spoken-time caps land
@@ -60,6 +62,8 @@
 #define BATTERY_FILL_DY 2
 #define BATTERY_FILL_W 14
 #define BATTERY_FILL_H 5
+#define BATTERY_INNER_W 16  // color theme: fill the whole interior
+#define BATTERY_INNER_H 7
 #endif
 
 #define PERSIST_KEY_PROGRESS_MODE 1
@@ -79,7 +83,11 @@ typedef enum {
 #define COLOR_STATUS_TOP GColorWhite
 #define COLOR_STATUS_BOTTOM GColorLightGray
 #define COLOR_ACCENT GColorPictonBlue  // quiet-time icon (tinted sheet) and progress
-#define COLOR_BATTERY GColorIslamicGreen
+// Battery: dark gray frame (in the tinted icon sheet), the charge split into
+// a light upper half and a darker lower half, after the reference's
+// #A5E07F fill under its highlight/shade gradient.
+#define COLOR_BATTERY_TOP GColorMintGreen
+#define COLOR_BATTERY_BOTTOM GColorMayGreen
 #endif
 
 static Window *s_window;
@@ -160,13 +168,23 @@ static void prv_draw_status(GContext *ctx, const struct tm *t) {
 
   const int battery_x = w - BATTERY_INSET;
   canvas_draw_icon(ctx, ICON_BATTERY, battery_x, STATUS_ICON_Y);
-  int fill = (s_battery_percent * BATTERY_FILL_W + 50) / 100;
 #ifdef PBL_COLOR
-  graphics_context_set_fill_color(ctx, color ? COLOR_BATTERY : GColorBlack);
+  if (color) {
+    const int fill = (s_battery_percent * BATTERY_INNER_W + 50) / 100;
+    const int top_h = (BATTERY_INNER_H + 1) / 2;
+    graphics_context_set_fill_color(ctx, COLOR_BATTERY_TOP);
+    canvas_fill_rect(ctx, battery_x + 1, STATUS_ICON_Y + 1, fill, top_h);
+    graphics_context_set_fill_color(ctx, COLOR_BATTERY_BOTTOM);
+    canvas_fill_rect(ctx, battery_x + 1, STATUS_ICON_Y + 1 + top_h, fill,
+                     BATTERY_INNER_H - top_h);
+    graphics_context_set_fill_color(ctx, GColorBlack);
+  } else
 #endif
-  canvas_fill_rect(ctx, battery_x + BATTERY_FILL_DX, STATUS_ICON_Y + BATTERY_FILL_DY, fill,
-                   BATTERY_FILL_H);
-  graphics_context_set_fill_color(ctx, GColorBlack);
+  {
+    const int fill = (s_battery_percent * BATTERY_FILL_W + 50) / 100;
+    canvas_fill_rect(ctx, battery_x + BATTERY_FILL_DX, STATUS_ICON_Y + BATTERY_FILL_DY, fill,
+                     BATTERY_FILL_H);
+  }
 
   if (!color) {
     canvas_fill_rect(ctx, 0, SEPARATOR_Y, w, 1);

@@ -122,9 +122,12 @@ values to a reference recreation's title bar (`#feffff` → `#b1b6b9`):
   between). The separator line is hidden.
 - Quiet-time icon and progress fill: light blue (`GColorPictonBlue`). The
   The track outline stays black.
-- Battery: green (`GColorIslamicGreen`).
-- Both status icons get a 1px white halo, so their thin strokes stay legible
-  on the gray.
+- Battery, after the reference battery (`#626262` frame, `#A5E07F` charge
+  under a highlight/shade gradient): dark gray frame (`GColorDarkGray`), and
+  a charge that fills the whole interior, light green in the upper half
+  (`GColorMintGreen`) and darker green in the lower half (`GColorMayGreen`).
+- Both status icons get a 1px white halo on the outside, so their thin
+  strokes stay legible on the gray.
 
 The tinted icons are a separate sheet (`icons_color*.png`, packed for
 basalt/emery only, every icon padded 1px for the halo) drawn with
