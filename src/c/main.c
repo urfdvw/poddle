@@ -19,6 +19,7 @@
 #define STATUS_CAP_Y 16
 #define STATUS_ICON_Y 17
 #define STATUS_ICON_X 11
+#define STATUS_ICON_GAP 4  // between the quiet-time and disconnected icons
 #define BATTERY_INSET 33  // 25px body ends 8px from the right, nub hangs past it
 #define SEPARATOR_Y 46
 #define DATE_CAP_Y 50
@@ -45,6 +46,7 @@
 #define STATUS_CAP_Y 11
 #define STATUS_ICON_Y 12  // 9px icons centered on the 34px status row
 #define STATUS_ICON_X 8
+#define STATUS_ICON_GAP 3  // between the quiet-time and disconnected icons
 #define BATTERY_INSET 24  // 18px body ends 6px from the right, nub hangs past it
 #define SEPARATOR_Y 33
 #define DATE_CAP_Y 36
@@ -97,6 +99,7 @@ static LabelFormat s_label_format = LABEL_FORMAT_ELAPSED;
 static Orientation s_orientation = ORIENTATION_PORTRAIT;
 static Theme s_theme = THEME_BW;
 static uint8_t s_battery_percent = 100;
+static bool s_connected = true;
 static TimeUnits s_tick_units;
 
 static bool prv_is_24h(void) {
@@ -162,6 +165,12 @@ static void prv_draw_status(GContext *ctx, const struct tm *t) {
 
   canvas_draw_icon(ctx, prv_quiet_time() ? ICON_QUIET_ON : ICON_QUIET_OFF, STATUS_ICON_X,
                    STATUS_ICON_Y);
+  if (!s_connected) {
+    // Second top-left icon, only while the phone is disconnected.
+    canvas_draw_icon(ctx, ICON_DISCONNECTED,
+                     STATUS_ICON_X + ASSET_ICON_ENTRIES[ICON_QUIET_OFF].w + STATUS_ICON_GAP,
+                     STATUS_ICON_Y);
+  }
 
   char buf[LABEL_BUF_SIZE];
   format_clock(buf, t->tm_hour, t->tm_min, prv_is_24h());
@@ -294,6 +303,16 @@ static void prv_subscribe_ticks(void) {
   }
 }
 
+static void prv_connection_handler(bool connected) {
+  s_connected = connected;
+#ifdef DEMO_DISCONNECTED
+  s_connected = !DEMO_DISCONNECTED;
+#endif
+  if (s_window) {
+    layer_mark_dirty(window_get_root_layer(s_window));
+  }
+}
+
 static void prv_battery_handler(BatteryChargeState state) {
   s_battery_percent = state.charge_percent;
 #ifdef DEMO_BATTERY
@@ -381,6 +400,10 @@ static void prv_init(void) {
 
   prv_battery_handler(battery_state_service_peek());
   battery_state_service_subscribe(prv_battery_handler);
+  prv_connection_handler(connection_service_peek_pebble_app_connection());
+  connection_service_subscribe((ConnectionHandlers){
+    .pebble_app_connection_handler = prv_connection_handler,
+  });
   prv_subscribe_ticks();
 
   app_message_register_inbox_received(prv_inbox_received);
@@ -390,6 +413,7 @@ static void prv_init(void) {
 static void prv_deinit(void) {
   tick_timer_service_unsubscribe();
   battery_state_service_unsubscribe();
+  connection_service_unsubscribe();
   window_destroy(s_window);
   canvas_deinit();
 }

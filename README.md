@@ -102,10 +102,18 @@ no pixels are ever rotated.
 
 | Row | Content |
 |---|---|
-| Status | quiet-time icon · time (follows the 12h/24h setting) · battery |
+| Status | quiet-time icon (+ disconnected icon) · time (follows the 12h/24h setting) · battery |
 | Date | `M/D` · two-letter weekday |
 | Spoken time | hour word / minute word / AM-PM (always 12-hour) |
 | Progress | bar + labels |
+
+While the phone is disconnected, a second top-left icon appears next to the
+quiet-time one: a Bluetooth rune with an X, drawn like the quiet-time X
+(`connection_service`, redrawn on change). It is in every icon sheet (both
+orientations, base and large, and tinted with the white halo in the color
+theme).
+
+![Disconnected icon on every platform and theme](docs/screenshots/disconnected/all_disconnected.png)
 
 Settings (Clay): orientation (portrait/landscape), theme (color screens
 only), what the bar measures (minute/hour), and what the labels show
@@ -147,7 +155,8 @@ and text ink keeps an 8px margin on both sides. W×H is the canvas: 144×168
 portrait, 168×144 landscape.
 
 - Status row 0–32: text cap at y=11, centered on W/2; icons at y=12; speaker
-  x=8; battery body from W−24 to W−7 (nub 2px past it); separator line at
+  x=8, disconnected icon 3px to its right (x=24); battery body from W−24 to
+  W−7 (nub 2px past it); separator line at
   y=33.
 - Date row: cap at y=36.
 - Spoken time, centered on W/2: the block (hour cap top to AM/PM baseline,
@@ -218,8 +227,8 @@ python3 tests/check_logic.py    # host-side logic tests
 pebble build && cp build/poddle.pbw dist/
 
 tools/emu.sh start
-# pinned demo build: time date/wday mode format battery quiet 24h orientation theme
-tools/screenshot.sh /tmp/shot 15:29:18 10/1/4 1 1 65 0 0 0 0
+# pinned demo build: time date/wday mode format battery quiet 24h orientation theme disconnected
+tools/screenshot.sh /tmp/shot 15:29:18 10/1/4 1 1 65 0 0 0 0 0
 NODE_PATH=$(npm root -g) node tools/render_mock.js 2026-10-01T15:29:18 /tmp/mock
 python3 tools/compare_mock.py /tmp/mock_portrait_hour.png /tmp/shot_canvas.png /tmp/cmp
 # landscape: pass 1 as the last screenshot.sh argument, compare with /tmp/mock_canvas.png

@@ -611,8 +611,19 @@
      "rsb": 0
     },
     {
-     "name": "BATTERY",
+     "name": "DISCONNECTED",
      "py": 26,
+     "px": 0,
+     "w": 13,
+     "h": 9,
+     "ox": 0,
+     "adv": 13,
+     "lsb": 0,
+     "rsb": 0
+    },
+    {
+     "name": "BATTERY",
+     "py": 39,
      "px": 0,
      "w": 20,
      "h": 9,
@@ -646,8 +657,19 @@
      "rsb": 0
     },
     {
-     "name": "BATTERY",
+     "name": "DISCONNECTED",
      "py": 30,
+     "px": 0,
+     "w": 15,
+     "h": 11,
+     "ox": -1,
+     "adv": 13,
+     "lsb": 0,
+     "rsb": 0
+    },
+    {
+     "name": "BATTERY",
+     "py": 45,
      "px": 0,
      "w": 22,
      "h": 11,
@@ -1271,8 +1293,19 @@
      "rsb": 0
     },
     {
-     "name": "BATTERY",
+     "name": "DISCONNECTED",
      "py": 34,
+     "px": 0,
+     "w": 17,
+     "h": 12,
+     "ox": 0,
+     "adv": 17,
+     "lsb": 0,
+     "rsb": 0
+    },
+    {
+     "name": "BATTERY",
+     "py": 51,
      "px": 0,
      "w": 27,
      "h": 12,
@@ -1306,8 +1339,19 @@
      "rsb": 0
     },
     {
-     "name": "BATTERY",
+     "name": "DISCONNECTED",
      "py": 38,
+     "px": 0,
+     "w": 19,
+     "h": 14,
+     "ox": -1,
+     "adv": 17,
+     "lsb": 0,
+     "rsb": 0
+    },
+    {
+     "name": "BATTERY",
+     "py": 57,
      "px": 0,
      "w": 29,
      "h": 14,
