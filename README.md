@@ -125,8 +125,8 @@ it and "O'Clock" (61px) fit easily.
 The description and screenshots are attached at publish time; the `.pbw`
 carries neither.
 
-- `store/description.txt`: the listing description (contact information
-  only).
+- `store/description.txt`: the listing description, which holds the contact
+  link and the Carthage Sans credit.
 - `store/screenshots/`: one portrait and one landscape 144×168 B/W
   screenshot per platform, regenerated with `tools/store_screenshots.sh`
   (emulator running).

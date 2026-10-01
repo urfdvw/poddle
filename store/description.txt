@@ -1,1 +1,3 @@
 Contact: https://github.com/urfdvw/poddle/issues
+
+Font: Carthage Sans by Brian Connors (https://github.com/csyde/carthage-fonts), SIL Open Font License 1.1.
