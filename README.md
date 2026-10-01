@@ -185,13 +185,30 @@ carries neither.
 
 - `store/description.txt`: the listing description, which holds the contact
   link and the Carthage Sans credit.
-- `store/screenshots/`: one portrait and one landscape screenshot per
-  platform, regenerated with `tools/store_screenshots.sh` (it boots flint
-  for the 144×168 platforms, then emery).
+- `store/screenshots/`: five screenshots per platform, regenerated with
+  `tools/store_screenshots.sh` (it boots each emulator in turn). Files are
+  named `PLATFORM_N_STATE.png`; N is the upload order, and N=1 (portrait,
+  default settings) leads the listing.
 - `tools/publish.sh`: runs `pebble publish --non-interactive` with both,
   portrait first so it leads the listing. The description only applies when
   the store app is first created. To swap the screenshots of an existing app,
   pass `--replace-screenshots`.
+
+### Store screenshots
+
+Every state below comes from the emulator, with the time, battery and settings pinned through `tools/screenshot.sh`.
+
+- **Black & white screens:** (1) portrait with default settings: hour bar, elapsed/remaining labels; (2) landscape; (3) minute bar with start/end labels; (4) O'Clock in 24-hour style with quiet time on (quiet time is left off on aplite, whose firmware has no Quiet Time API); (5) landscape with the longest minute line.
+- **Color screens:** (1) portrait; (2) landscape; (3) color theme, portrait; (4) color theme, landscape; (5) color theme with quiet time on and low battery.
+- The diorite set reuses the flint captures: the screen and rendering are identical, and this avoids the corner pixels the diorite emulator blacks out.
+
+| Platform | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| aplite<br>Pebble, Pebble Steel | <img src="store/screenshots/aplite_1_portrait.png" width="100"> | <img src="store/screenshots/aplite_2_landscape.png" width="100"> | <img src="store/screenshots/aplite_3_minute_start_end.png" width="100"> | <img src="store/screenshots/aplite_4_oclock_24h.png" width="100"> | <img src="store/screenshots/aplite_5_landscape_longest.png" width="100"> |
+| diorite<br>Pebble 2, Pebble 2 SE | <img src="store/screenshots/diorite_1_portrait.png" width="100"> | <img src="store/screenshots/diorite_2_landscape.png" width="100"> | <img src="store/screenshots/diorite_3_minute_start_end.png" width="100"> | <img src="store/screenshots/diorite_4_oclock_quiet_24h.png" width="100"> | <img src="store/screenshots/diorite_5_landscape_longest.png" width="100"> |
+| flint<br>Pebble 2 Duo | <img src="store/screenshots/flint_1_portrait.png" width="100"> | <img src="store/screenshots/flint_2_landscape.png" width="100"> | <img src="store/screenshots/flint_3_minute_start_end.png" width="100"> | <img src="store/screenshots/flint_4_oclock_quiet_24h.png" width="100"> | <img src="store/screenshots/flint_5_landscape_longest.png" width="100"> |
+| basalt<br>Pebble Time, Time Steel | <img src="store/screenshots/basalt_1_portrait.png" width="100"> | <img src="store/screenshots/basalt_2_landscape.png" width="100"> | <img src="store/screenshots/basalt_3_color_portrait.png" width="100"> | <img src="store/screenshots/basalt_4_color_landscape.png" width="100"> | <img src="store/screenshots/basalt_5_color_quiet_low_battery.png" width="100"> |
+| emery<br>Pebble Time 2 | <img src="store/screenshots/emery_1_portrait.png" width="120"> | <img src="store/screenshots/emery_2_landscape.png" width="120"> | <img src="store/screenshots/emery_3_color_portrait.png" width="120"> | <img src="store/screenshots/emery_4_color_landscape.png" width="120"> | <img src="store/screenshots/emery_5_color_quiet_low_battery.png" width="120"> |
 
 ## Working on it
 
