@@ -279,9 +279,9 @@ def build_icon_sheet(sc):
 
 # Color theme icon tints (exact Pebble 64-color palette values).
 ICON_COLORS = {
-    "QUIET_OFF": (0x55, 0xAA, 0xFF),  # GColorPictonBlue
-    "QUIET_ON": (0x55, 0xAA, 0xFF),
-    "DISCONNECTED": (0x55, 0xAA, 0xFF),
+    "QUIET_OFF": (0x00, 0x55, 0xAA),  # GColorCobaltBlue: dark enough to read on the gray
+    "QUIET_ON": (0x00, 0x55, 0xAA),
+    "DISCONNECTED": (0x00, 0x55, 0xAA),
     "BATTERY": (0x55, 0x55, 0x55),    # GColorDarkGray frame; fill drawn at runtime
 }
 

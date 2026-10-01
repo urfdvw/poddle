@@ -82,7 +82,8 @@ typedef enum {
 // #feffff -> #b1b6b9; these are the nearest palette colors).
 #define COLOR_STATUS_TOP GColorWhite
 #define COLOR_STATUS_BOTTOM GColorLightGray
-#define COLOR_ACCENT GColorPictonBlue  // quiet-time icon (tinted sheet) and progress
+#define COLOR_ACCENT GColorPictonBlue  // progress fill (the top-left icons are tinted
+                                       // GColorCobaltBlue in their sheet)
 // Battery: dark gray frame (in the tinted icon sheet), the charge split into
 // a light upper half and a darker lower half, after the reference's
 // #A5E07F fill under its highlight/shade gradient.

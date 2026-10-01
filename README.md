@@ -135,14 +135,16 @@ values to a reference recreation's title bar (`#feffff` → `#b1b6b9`):
 - Status row: white fading to light gray down to the separator row, with
   4×4 ordered dithering between the two (the palette has no grays in
   between). The separator line is hidden.
-- Quiet-time icon and progress fill: light blue (`GColorPictonBlue`). The
-  The track outline stays black.
+- Top-left icons (connection / quiet time): dark blue (`GColorCobaltBlue`),
+  so they read on the gray.
+- Progress fill: light blue (`GColorPictonBlue`). The track outline stays
+  black.
 - Battery, after the reference battery (`#626262` frame, `#A5E07F` charge
   under a highlight/shade gradient): dark gray frame (`GColorDarkGray`), and
   a charge that fills the whole interior, light green in the upper half
   (`GColorMintGreen`) and darker green in the lower half (`GColorMayGreen`),
   over a dark gray empty part (`GColorDarkGray`, the reference's `#54585b`).
-- Both status icons get a 1px white halo on the outside, so their thin
+- The status icons get a 1px white halo on the outside, so their thin
   strokes stay legible on the gray.
 
 The tinted icons are a separate sheet (`icons_color*.png`, packed for
