@@ -1,0 +1,15 @@
+diff --git a/src/fw/applib/app.c b/src/fw/applib/app.c
+index cbed45c88..bc1112874 100644
+--- a/src/fw/applib/app.c
++++ b/src/fw/applib/app.c
+@@ -234,6 +234,10 @@ void app_event_loop_common(void) {
+ 
+     sys_get_pebble_event(&event);
+ 
++    if (event.type == PEBBLE_NULL_EVENT) {
++      continue;
++    }
++
+     if (event.type == PEBBLE_PROCESS_DEINIT_EVENT) {
+       prv_handle_deinit_event();
+       // We're done here. Return the app's main function.

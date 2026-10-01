@@ -1,0 +1,5 @@
+# waf intermediate tree; the shipped bundle is copied to dist/
+build/
+.lock-waf_*
+node_modules/
+__pycache__/
