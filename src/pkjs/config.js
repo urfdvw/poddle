@@ -63,6 +63,39 @@ module.exports = [
     ]
   },
   {
+    type: 'section',
+    items: [
+      {
+        type: 'heading',
+        defaultValue: 'Battery Saving'
+      },
+      {
+        type: 'select',
+        messageKey: 'UpdateSchedule',
+        label: 'Redraw schedule',
+        defaultValue: '0',
+        options: [
+          { label: 'Exact', value: '0' },
+          { label: 'Random', value: '1' }
+        ]
+      },
+      {
+        type: 'input',
+        messageKey: 'UpdateInterval',
+        label: 'Redraw period (sec)',
+        defaultValue: '1',
+        description: 'A whole number from 1 to 60.',
+        attributes: {
+          type: 'number',
+          min: 1,
+          max: 60,
+          step: 1,
+          required: 'required'
+        }
+      }
+    ]
+  },
+  {
     type: 'submit',
     defaultValue: 'Save'
   }

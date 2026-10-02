@@ -3,6 +3,7 @@
 #include "assets.h"
 #include "canvas.h"
 #include "labels.h"
+#include "schedule.h"
 #include "time_words.h"
 
 // Layout on the design canvas (y values are cap tops for text). Rows above
@@ -76,6 +77,8 @@
 #define PERSIST_KEY_LABEL_FORMAT 2
 #define PERSIST_KEY_ORIENTATION 3
 #define PERSIST_KEY_THEME 4
+#define PERSIST_KEY_UPDATE_SCHEDULE 5
+#define PERSIST_KEY_UPDATE_INTERVAL 6
 
 // Theme (Clay). The color theme only exists on color screens.
 typedef enum {
@@ -108,7 +111,10 @@ static Orientation s_orientation = ORIENTATION_PORTRAIT;
 static Theme s_theme = THEME_BW;
 static uint8_t s_battery_percent = 100;
 static bool s_connected = true;
+static UpdateSchedule s_update_schedule = UPDATE_SCHEDULE_EXACT;
+static int s_update_interval = UPDATE_INTERVAL_DEFAULT;
 static TimeUnits s_tick_units;
+static AppTimer *s_update_timer;
 
 static bool prv_is_24h(void) {
 #ifdef DEMO_24H
@@ -305,12 +311,42 @@ static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   layer_mark_dirty(window_get_root_layer(s_window));
 }
 
+static void prv_arm_update_timer(void);
+
+static void prv_update_timer_handler(void *context) {
+  s_update_timer = NULL;
+  layer_mark_dirty(window_get_root_layer(s_window));
+  prv_arm_update_timer();
+}
+
+static void prv_arm_update_timer(void) {
+  time_t now_s;
+  uint16_t now_ms;
+  time_ms(&now_s, &now_ms);
+  const uint32_t delay = update_delay_ms(s_update_schedule, s_update_interval,
+                                         (uint32_t)now_s, now_ms, (uint32_t)rand());
+  s_update_timer = app_timer_register(delay, prv_update_timer_handler, NULL);
+}
+
 static void prv_subscribe_ticks(void) {
-  TimeUnits units =
-      progress_needs_seconds(s_progress_mode, s_label_format) ? SECOND_UNIT : MINUTE_UNIT;
+  if (s_update_timer) {
+    app_timer_cancel(s_update_timer);
+    s_update_timer = NULL;
+  }
+  // Without seconds on screen a minute tick is all the face needs. With
+  // seconds, exact 1s keeps the firmware's second tick; any other Battery
+  // Saving setting redraws from a timer, plus the minute tick so the time
+  // and words still change on the minute.
+  const bool seconds = progress_needs_seconds(s_progress_mode, s_label_format);
+  const bool every_second =
+      s_update_schedule == UPDATE_SCHEDULE_EXACT && s_update_interval == 1;
+  const TimeUnits units = (seconds && every_second) ? SECOND_UNIT : MINUTE_UNIT;
   if (units != s_tick_units) {
     tick_timer_service_subscribe(units, prv_tick_handler);
     s_tick_units = units;
+  }
+  if (seconds && !every_second) {
+    prv_arm_update_timer();
   }
 }
 
@@ -368,6 +404,21 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
     persist_write_int(PERSIST_KEY_THEME, s_theme);
     canvas_set_color_icons(prv_color_theme());
   }
+  Tuple *schedule = dict_find(iter, MESSAGE_KEY_UpdateSchedule);
+  if (schedule) {
+    s_update_schedule = prv_tuple_int(schedule) == UPDATE_SCHEDULE_RANDOM
+                            ? UPDATE_SCHEDULE_RANDOM
+                            : UPDATE_SCHEDULE_EXACT;
+    persist_write_int(PERSIST_KEY_UPDATE_SCHEDULE, s_update_schedule);
+  }
+  Tuple *interval = dict_find(iter, MESSAGE_KEY_UpdateInterval);
+  if (interval) {
+    // Blank or non-numeric input reads as 0: fall back to the default.
+    const int32_t seconds = prv_tuple_int(interval);
+    s_update_interval =
+        seconds < UPDATE_INTERVAL_MIN ? UPDATE_INTERVAL_DEFAULT : update_interval_clamp(seconds);
+    persist_write_int(PERSIST_KEY_UPDATE_INTERVAL, s_update_interval);
+  }
   prv_subscribe_ticks();
   layer_mark_dirty(window_get_root_layer(s_window));
 }
@@ -398,9 +449,18 @@ static void prv_load_settings(void) {
   if (persist_exists(PERSIST_KEY_THEME)) {
     s_theme = persist_read_int(PERSIST_KEY_THEME) == THEME_COLOR ? THEME_COLOR : THEME_BW;
   }
+  if (persist_exists(PERSIST_KEY_UPDATE_SCHEDULE)) {
+    s_update_schedule = persist_read_int(PERSIST_KEY_UPDATE_SCHEDULE) == UPDATE_SCHEDULE_RANDOM
+                            ? UPDATE_SCHEDULE_RANDOM
+                            : UPDATE_SCHEDULE_EXACT;
+  }
+  if (persist_exists(PERSIST_KEY_UPDATE_INTERVAL)) {
+    s_update_interval = update_interval_clamp(persist_read_int(PERSIST_KEY_UPDATE_INTERVAL));
+  }
 }
 
 static void prv_init(void) {
+  srand(time(NULL));
   prv_load_settings();
   canvas_init(s_orientation);
   canvas_set_color_icons(prv_color_theme());
@@ -422,6 +482,9 @@ static void prv_init(void) {
 }
 
 static void prv_deinit(void) {
+  if (s_update_timer) {
+    app_timer_cancel(s_update_timer);
+  }
   tick_timer_service_unsubscribe();
   battery_state_service_unsubscribe();
   connection_service_unsubscribe();
