@@ -26,7 +26,7 @@ BANDS = {
 }
 GAP = 7  # px of empty columns that separate two elements in a band
 # The status row and separator were deliberately moved up from the mockup
-# (see README, layout values); they are reported but not scored.
+# (see docs/ENGINEERING.md, layout values); they are reported but not scored.
 UNSCORED = {"status", "separator"}
 
 
@@ -60,7 +60,7 @@ def main():
     mock, watch, out = ink(sys.argv[1]), ink(sys.argv[2]), sys.argv[3]
     w, h = len(mock[0]), len(mock)
     assert (len(watch[0]), len(watch)) == (w, h), "orientation mismatch"
-    cx, right = w // 2, w - 18
+    right = w - 18
     worst = 0
     for name, y0, y1 in BANDS[(w, h)]:
         a, b = elements(mock, y0, y1), elements(watch, y0, y1)

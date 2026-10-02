@@ -2,6 +2,12 @@
 
 #include "assets.h"
 
+typedef struct {
+  int adv;    // pen advance of the whole run
+  int ink_l;  // ink extent relative to the pen start: [ink_l, ink_r)
+  int ink_r;
+} RunMetrics;
+
 static GBitmap *s_sheets[SHEET_COUNT];
 static int16_t s_sheet_h[SHEET_COUNT];  // portrait sheets: full height, before set_bounds
 static Orientation s_orientation = ORIENTATION_PORTRAIT;
@@ -100,7 +106,9 @@ int canvas_height(void) {
   return s_orientation == ORIENTATION_LANDSCAPE ? SCREEN_W : SCREEN_H;
 }
 
-GRect canvas_to_screen(GRect r) {
+// Canvas rect -> physical screen rect (landscape: the canvas is the screen
+// turned 90 degrees, so only the origin moves and the size swaps).
+static GRect prv_to_screen(GRect r) {
   if (s_orientation == ORIENTATION_PORTRAIT) {
     return r;
   }
@@ -111,7 +119,7 @@ void canvas_fill_rect(GContext *ctx, int x, int y, int w, int h) {
   if (w <= 0 || h <= 0) {
     return;
   }
-  graphics_fill_rect(ctx, canvas_to_screen(GRect(x, y, w, h)), 0, GCornerNone);
+  graphics_fill_rect(ctx, prv_to_screen(GRect(x, y, w, h)), 0, GCornerNone);
 }
 
 static void prv_blit_bitmap(GContext *ctx, GBitmap *bmp, int sheet_h, GCompOp op,
@@ -127,7 +135,7 @@ static void prv_blit_bitmap(GContext *ctx, GBitmap *bmp, int sheet_h, GCompOp op
     gbitmap_set_bounds(bmp, GRect(e->py, sheet_h - e->px - e->h, e->w, e->h));
   }
   graphics_context_set_compositing_mode(ctx, op);
-  graphics_draw_bitmap_in_rect(ctx, bmp, canvas_to_screen(GRect(x, y, e->w, e->h)));
+  graphics_draw_bitmap_in_rect(ctx, bmp, prv_to_screen(GRect(x, y, e->w, e->h)));
 }
 
 static void prv_blit(GContext *ctx, int sheet, const SheetEntry *e, int x, int y) {
@@ -142,7 +150,7 @@ static int prv_adv(const Glyph *g) {
   return SHEET_ENTRIES[g->sheet][g->index].adv;
 }
 
-RunMetrics canvas_measure(const Glyph *run, int count) {
+static RunMetrics prv_measure(const Glyph *run, int count) {
   RunMetrics m = {0, 0, 0};
   for (int i = 0; i < count; i++) {
     m.adv += prv_adv(&run[i]);
@@ -159,7 +167,7 @@ RunMetrics canvas_measure(const Glyph *run, int count) {
   return m;
 }
 
-void canvas_draw_run(GContext *ctx, const Glyph *run, int count, int pen_x, int cap_top) {
+static void prv_draw_run(GContext *ctx, const Glyph *run, int count, int pen_x, int cap_top) {
   for (int i = 0; i < count; i++) {
     const Glyph *g = &run[i];
     if (g->sheet != SHEET_SPACE) {
@@ -171,20 +179,20 @@ void canvas_draw_run(GContext *ctx, const Glyph *run, int count, int pen_x, int 
 }
 
 void canvas_draw_left(GContext *ctx, const Glyph *run, int count, int ink_x, int cap_top) {
-  RunMetrics m = canvas_measure(run, count);
-  canvas_draw_run(ctx, run, count, ink_x - m.ink_l, cap_top);
+  RunMetrics m = prv_measure(run, count);
+  prv_draw_run(ctx, run, count, ink_x - m.ink_l, cap_top);
 }
 
 void canvas_draw_right(GContext *ctx, const Glyph *run, int count, int ink_right,
                        int cap_top) {
-  RunMetrics m = canvas_measure(run, count);
-  canvas_draw_run(ctx, run, count, ink_right - m.ink_r, cap_top);
+  RunMetrics m = prv_measure(run, count);
+  prv_draw_run(ctx, run, count, ink_right - m.ink_r, cap_top);
 }
 
 void canvas_draw_centered(GContext *ctx, const Glyph *run, int count, int center_x,
                           int cap_top) {
-  RunMetrics m = canvas_measure(run, count);
-  canvas_draw_run(ctx, run, count, center_x - (m.ink_l + m.ink_r) / 2, cap_top);
+  RunMetrics m = prv_measure(run, count);
+  prv_draw_run(ctx, run, count, center_x - (m.ink_l + m.ink_r) / 2, cap_top);
 }
 
 void canvas_draw_icon(GContext *ctx, int icon, int x, int y) {
@@ -231,7 +239,7 @@ static const uint8_t BAYER4[4][4] = {
 };
 
 static void prv_render_gradient(GRect r, GColor top, GColor bottom) {
-  GRect screen = canvas_to_screen(r);
+  GRect screen = prv_to_screen(r);
   if (s_gradient) {
     gbitmap_destroy(s_gradient);
   }
@@ -251,7 +259,7 @@ static void prv_render_gradient(GRect r, GColor top, GColor bottom) {
       const int cx = r.origin.x + col;
       const int cy = r.origin.y + row;
       const GColor c = BAYER4[cy & 3][cx & 3] < level ? bottom : top;
-      // Same placement as canvas_to_screen, per pixel within the bitmap.
+      // Same placement as prv_to_screen, per pixel within the bitmap.
       int bx = col, by = row;
       if (s_orientation == ORIENTATION_LANDSCAPE) {
         bx = r.size.h - 1 - row;
@@ -269,7 +277,7 @@ void canvas_draw_gradient(GContext *ctx, GRect r, GColor top, GColor bottom) {
   }
   if (s_gradient) {
     graphics_context_set_compositing_mode(ctx, GCompOpAssign);
-    graphics_draw_bitmap_in_rect(ctx, s_gradient, canvas_to_screen(r));
+    graphics_draw_bitmap_in_rect(ctx, s_gradient, prv_to_screen(r));
   }
 }
 #endif

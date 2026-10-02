@@ -9,6 +9,7 @@ period (date/time parsing, when it is active over two weeks, and its bar
 and labels every second inside a few periods)."""
 
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -69,7 +70,6 @@ def duration(sign, sec, hour_seconds):
 
 
 def pdate(text):
-    import re
     m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", text)
     if not m or not 1 <= int(m[2]) <= 12 or not 1 <= int(m[3]) <= 31:
         return 0
@@ -77,7 +77,6 @@ def pdate(text):
 
 
 def ptime(text):
-    import re
     m = re.fullmatch(r"(\d{2}):(\d{2})(:.*)?", text)
     if not m or int(m[1]) > 23 or int(m[2]) > 59:
         return -1
@@ -161,7 +160,8 @@ def main():
             if failures <= 20:
                 print(f"FAIL {kind} {key}: got {got!r}, want {want!r}")
     print(", ".join(f"{v} {k}" for k, v in counts.items()), f"checked; {failures} failures")
-    longest = max((l for l in out if l.startswith("words")), key=lambda l: len(l.split("|")[2]))
+    longest = max((line for line in out if line.startswith("words")),
+                  key=lambda line: len(line.split("|")[2]))
     print("longest minute line:", longest.split("|")[2])
     sys.exit(1 if failures or counts.get("words") != 1440 else 0)
 
