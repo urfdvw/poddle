@@ -28,7 +28,9 @@
       "ProgressMode",
       "LabelFormat",
       "Orientation",
-      "Theme"
+      "Theme",
+      "UpdateSchedule",
+      "UpdateInterval"
     ],
     "resources": {
       "media": [

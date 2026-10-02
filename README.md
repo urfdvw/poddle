@@ -123,8 +123,9 @@ time, sound on:
 ![Disconnected / quiet time / sound on](docs/screenshots/disconnected/three_states_color.png)
 
 Settings (Clay): orientation (portrait/landscape), theme (color screens
-only), what the bar measures (minute/hour), and what the labels show
-(start-end/elapsed-remaining).
+only), what the bar measures (minute/hour), what the labels show
+(start-end/elapsed-remaining), and Battery Saving (update schedule and
+interval, below).
 
 ### Color theme (basalt, emery)
 
@@ -155,8 +156,22 @@ into a cached 8-bit bitmap. Text stays black.
 
 ![Color theme](docs/screenshots/color/all_color.png)
 
-Ticks are per-second when the bar is in minute mode or the labels show
-elapsed/remaining, and per-minute otherwise.
+The face needs seconds when the bar is in minute mode or the labels show
+elapsed/remaining; otherwise it only redraws once a minute. While it shows
+seconds, the **Battery Saving** settings decide how often it redraws:
+
+- **Update schedule: Exact** (default): every X seconds, on instants whose
+  Unix time is a multiple of X, so with X = 5 the seconds read :00, :05,
+  :10, … X = 1 (the default) uses the firmware's second tick, as before.
+- **Update schedule: Random**: after each redraw, waits 0.5·X + U[0, X)
+  seconds (uniform), so updates come X seconds apart on average.
+- **Update every [X] seconds**: a whole number from 1 to 59 (default 1).
+  Blank or non-numeric input falls back to 1; larger values are capped at
+  59.
+
+Except with exact 1s, the redraws come from an `AppTimer`
+(`src/c/schedule.c` computes the delay), plus a minute tick so the time and
+words still change on the minute.
 
 ### Layout values (for review)
 

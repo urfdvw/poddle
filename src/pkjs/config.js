@@ -63,6 +63,41 @@ module.exports = [
     ]
   },
   {
+    type: 'section',
+    items: [
+      {
+        type: 'heading',
+        defaultValue: 'Battery Saving'
+      },
+      {
+        type: 'select',
+        messageKey: 'UpdateSchedule',
+        label: 'Update schedule',
+        defaultValue: '0',
+        options: [
+          { label: 'Exact', value: '0' },
+          { label: 'Random', value: '1' }
+        ]
+      },
+      {
+        type: 'input',
+        messageKey: 'UpdateInterval',
+        label: 'Update every [X] seconds',
+        defaultValue: '1',
+        description: 'A whole number from 1 to 59. Exact redraws every X seconds; ' +
+          'Random waits 0.5\u00d7X plus a random 0 to X seconds each time (X on ' +
+          'average). Only applies while the face shows seconds.',
+        attributes: {
+          type: 'number',
+          min: 1,
+          max: 59,
+          step: 1,
+          required: 'required'
+        }
+      }
+    ]
+  },
+  {
     type: 'submit',
     defaultValue: 'Save'
   }

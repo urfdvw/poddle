@@ -3,6 +3,7 @@
 
 #include "../src/c/assets.h"
 #include "../src/c/labels.h"
+#include "../src/c/schedule.h"
 #include "../src/c/time_words.h"
 
 static const char *WORD_TEXT[WORD_COUNT] = {
@@ -50,6 +51,24 @@ int main(void) {
       char buf[LABEL_BUF_SIZE];
       format_date(buf, mo, d);
       printf("date %d %d|%s\n", mo, d, buf);
+    }
+  }
+  // Battery Saving schedule.
+  for (int v = -5; v <= 70; v++) {
+    printf("clamp %d|%d\n", v, update_interval_clamp(v));
+  }
+  static const uint16_t MS[] = {0, 1, 500, 999};
+  for (int interval = 1; interval <= 59; interval++) {
+    for (uint32_t now = 1790000000u; now < 1790000000u + 2 * 60; now++) {
+      for (int m = 0; m < 4; m++) {
+        printf("exact %d %lu %u|%lu\n", interval, (unsigned long)now, MS[m],
+               (unsigned long)update_delay_ms(UPDATE_SCHEDULE_EXACT, interval, now, MS[m], 0));
+      }
+    }
+    static const uint32_t RND[] = {0, 1, 499, 500, 999, 1000, 12345, 2147483647u, 4294967295u};
+    for (int r = 0; r < 9; r++) {
+      printf("random %d %lu|%lu\n", interval, (unsigned long)RND[r],
+             (unsigned long)update_delay_ms(UPDATE_SCHEDULE_RANDOM, interval, 0, 0, RND[r]));
     }
   }
   return 0;

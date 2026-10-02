@@ -3,7 +3,8 @@
 Python reading of the spec: spoken-time words over all 1440 hour x minute
 combinations (= the spec's 720 12-hour combinations, for both AM and PM),
 every second of the day for all 4 progress-bar combinations in both clock
-styles, and the date format."""
+styles, the date format, and the Battery Saving update schedule (exact:
+next multiple of X seconds; random: 0.5*X + U[0, X) seconds)."""
 
 import os
 import subprocess
@@ -63,7 +64,8 @@ def main():
         subprocess.check_call(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-o", exe,
                                os.path.join(ROOT, "tests", "dump_logic.c"),
                                os.path.join(ROOT, "src", "c", "time_words.c"),
-                               os.path.join(ROOT, "src", "c", "labels.c")])
+                               os.path.join(ROOT, "src", "c", "labels.c"),
+                               os.path.join(ROOT, "src", "c", "schedule.c")])
         out = subprocess.check_output([exe], text=True).splitlines()
 
     failures, counts = 0, {}
@@ -76,9 +78,22 @@ def main():
         elif kind == "progress":
             mode, fmt, is24, t = map(int, key.split())
             want = progress(mode, fmt, is24, t)
-        else:
+        elif kind == "date":
             mo, d = map(int, key.split())
             want = f"{mo}/{d}"
+        elif kind == "clamp":
+            want = str(min(59, max(1, int(key))))
+        elif kind == "exact":
+            interval, now, ms = map(int, key.split())
+            period = interval * 1000
+            delay = int(got)
+            # Lands on a multiple of the interval in Unix time, within one period.
+            ok = 1 <= delay <= period and (now * 1000 + ms + delay) % period == 0
+            want = got if ok else f"a delay in [1, {period}] reaching a multiple of {period}"
+        else:  # random
+            interval, rnd = map(int, key.split())
+            want = str(500 * interval + rnd % (1000 * interval))
+            assert 500 * interval <= int(want) < 1500 * interval
         counts[kind] = counts.get(kind, 0) + 1
         if got != want:
             failures += 1
