@@ -10,12 +10,16 @@ typedef enum {
 } UpdateSchedule;
 
 #define UPDATE_INTERVAL_MIN 1
-#define UPDATE_INTERVAL_MAX 60
+// New settings from the config page are capped at 40s, so a random redraw
+// (at most 1.5*X apart) never skips a whole minute. 1.0.2 allowed up to 60;
+// a value saved back then is kept as it is.
+#define UPDATE_INTERVAL_MAX 40
+#define UPDATE_INTERVAL_STORED_MAX 60
 #define UPDATE_INTERVAL_DEFAULT 1
 
-// Clamps a configured interval into [MIN, MAX]; out-of-range input that is
-// not a number at all should be mapped to the default by the caller.
-int update_interval_clamp(int seconds);
+// Clamps an interval into [MIN, max]; out-of-range input that is not a
+// number at all should be mapped to the default by the caller.
+int update_interval_clamp(int seconds, int max);
 
 // Milliseconds until the next redraw.
 //   exact:  the next instant whose Unix time is a multiple of `interval`

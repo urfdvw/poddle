@@ -165,13 +165,15 @@ seconds, the **Battery Saving** settings decide how often it redraws:
   :10, … X = 1 (the default) uses the firmware's second tick, as before.
 - **Redraw schedule: Random**: after each redraw, waits 0.5·X + U[0, X)
   seconds (uniform), so updates come X seconds apart on average.
-- **Redraw period (sec)** (X): a whole number from 1 to 60 (default
+- **Redraw period (sec)** (X): a whole number from 1 to 40 (default
   1). Blank or non-numeric input falls back to 1; larger values are capped
-  at 60.
+  at 40, so random redraws (at most 1.5·X = 60 s apart) never skip a
+  minute. A period of up to 60 saved with 1.0.2 keeps working until the
+  settings are saved again.
 
-Except with exact 1s, the redraws come from an `AppTimer`
-(`src/c/schedule.c` computes the delay), plus a minute tick so the time and
-words still change on the minute.
+Except with exact 1s, the redraws come only from an `AppTimer`
+(`src/c/schedule.c` computes the delay); there is no extra redraw on the
+minute, so with Random the screen does not change on :00 every minute.
 
 ### Layout values (for review)
 

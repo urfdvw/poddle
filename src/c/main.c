@@ -335,18 +335,23 @@ static void prv_subscribe_ticks(void) {
   }
   // Without seconds on screen a minute tick is all the face needs. With
   // seconds, exact 1s keeps the firmware's second tick; any other Battery
-  // Saving setting redraws from a timer, plus the minute tick so the time
-  // and words still change on the minute.
+  // Saving setting redraws from the timer alone, with no extra redraw on the
+  // minute (random exists to stay off :00).
   const bool seconds = progress_needs_seconds(s_progress_mode, s_label_format);
   const bool every_second =
       s_update_schedule == UPDATE_SCHEDULE_EXACT && s_update_interval == 1;
-  const TimeUnits units = (seconds && every_second) ? SECOND_UNIT : MINUTE_UNIT;
+  if (seconds && !every_second) {
+    if (s_tick_units) {
+      tick_timer_service_unsubscribe();
+      s_tick_units = 0;
+    }
+    prv_arm_update_timer();
+    return;
+  }
+  const TimeUnits units = seconds ? SECOND_UNIT : MINUTE_UNIT;
   if (units != s_tick_units) {
     tick_timer_service_subscribe(units, prv_tick_handler);
     s_tick_units = units;
-  }
-  if (seconds && !every_second) {
-    prv_arm_update_timer();
   }
 }
 
@@ -416,7 +421,8 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
     // Blank or non-numeric input reads as 0: fall back to the default.
     const int32_t seconds = prv_tuple_int(interval);
     s_update_interval =
-        seconds < UPDATE_INTERVAL_MIN ? UPDATE_INTERVAL_DEFAULT : update_interval_clamp(seconds);
+        seconds < UPDATE_INTERVAL_MIN ? UPDATE_INTERVAL_DEFAULT
+                                       : update_interval_clamp(seconds, UPDATE_INTERVAL_MAX);
     persist_write_int(PERSIST_KEY_UPDATE_INTERVAL, s_update_interval);
   }
   prv_subscribe_ticks();
@@ -455,7 +461,8 @@ static void prv_load_settings(void) {
                             : UPDATE_SCHEDULE_EXACT;
   }
   if (persist_exists(PERSIST_KEY_UPDATE_INTERVAL)) {
-    s_update_interval = update_interval_clamp(persist_read_int(PERSIST_KEY_UPDATE_INTERVAL));
+    s_update_interval = update_interval_clamp(persist_read_int(PERSIST_KEY_UPDATE_INTERVAL),
+                                              UPDATE_INTERVAL_STORED_MAX);
   }
 }
 
