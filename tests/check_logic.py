@@ -82,8 +82,6 @@ def main():
             mo, d = map(int, key.split())
             want = f"{mo}/{d}"
         elif kind == "clamp":
-            want = str(min(40, max(1, int(key))))
-        elif kind == "stored":
             want = str(min(60, max(1, int(key))))
         elif kind == "exact":
             interval, now, ms = map(int, key.split())
@@ -94,8 +92,10 @@ def main():
             want = got if ok else f"a delay in [1, {period}] reaching a multiple of {period}"
         else:  # random
             interval, rnd = map(int, key.split())
-            want = str(500 * interval + rnd % (1000 * interval))
-            assert 500 * interval <= int(want) < 1500 * interval
+            x = min(interval, 55) * 1000
+            y = 60000 - x
+            want = str(max(1000, x - y // 2 + rnd % y))
+            assert int(want) < 60000
         counts[kind] = counts.get(kind, 0) + 1
         if got != want:
             failures += 1

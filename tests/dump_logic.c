@@ -55,8 +55,7 @@ int main(void) {
   }
   // Battery Saving schedule.
   for (int v = -5; v <= 70; v++) {
-    printf("clamp %d|%d\n", v, update_interval_clamp(v, UPDATE_INTERVAL_MAX));
-    printf("stored %d|%d\n", v, update_interval_clamp(v, UPDATE_INTERVAL_STORED_MAX));
+    printf("clamp %d|%d\n", v, update_interval_clamp(v));
   }
   static const uint16_t MS[] = {0, 1, 500, 999};
   for (int interval = 1; interval <= 60; interval++) {

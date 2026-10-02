@@ -421,8 +421,7 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
     // Blank or non-numeric input reads as 0: fall back to the default.
     const int32_t seconds = prv_tuple_int(interval);
     s_update_interval =
-        seconds < UPDATE_INTERVAL_MIN ? UPDATE_INTERVAL_DEFAULT
-                                       : update_interval_clamp(seconds, UPDATE_INTERVAL_MAX);
+        seconds < UPDATE_INTERVAL_MIN ? UPDATE_INTERVAL_DEFAULT : update_interval_clamp(seconds);
     persist_write_int(PERSIST_KEY_UPDATE_INTERVAL, s_update_interval);
   }
   prv_subscribe_ticks();
@@ -461,8 +460,7 @@ static void prv_load_settings(void) {
                             : UPDATE_SCHEDULE_EXACT;
   }
   if (persist_exists(PERSIST_KEY_UPDATE_INTERVAL)) {
-    s_update_interval = update_interval_clamp(persist_read_int(PERSIST_KEY_UPDATE_INTERVAL),
-                                              UPDATE_INTERVAL_STORED_MAX);
+    s_update_interval = update_interval_clamp(persist_read_int(PERSIST_KEY_UPDATE_INTERVAL));
   }
 }
 

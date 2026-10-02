@@ -84,11 +84,11 @@ module.exports = [
         messageKey: 'UpdateInterval',
         label: 'Redraw period (sec)',
         defaultValue: '1',
-        description: 'A whole number from 1 to 40.',
+        description: 'A whole number from 1 to 60.',
         attributes: {
           type: 'number',
           min: 1,
-          max: 40,
+          max: 60,
           step: 1,
           required: 'required'
         }
