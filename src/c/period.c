@@ -63,7 +63,7 @@ bool period_active(const PeriodConfig *cfg, int year, int month, int mday, int w
 }
 
 void period_progress(const PeriodConfig *cfg, int hour24, int minute, int second, bool is_24h,
-                     ProgressInfo *out) {
+                     bool hour_seconds, ProgressInfo *out) {
   const int32_t start_s = cfg->start_min * 60;
   const int32_t span_s = cfg->end_min * 60 - start_s;
   // Segment labels only change by the minute, and so does the bar then.
@@ -76,8 +76,8 @@ void period_progress(const PeriodConfig *cfg, int hour24, int minute, int second
     format_clock(out->left, cfg->start_min / 60, cfg->start_min % 60, is_24h);
     format_clock(out->right, cfg->end_min / 60, cfg->end_min % 60, is_24h);
   } else {
-    format_duration(out->left, "", elapsed);
-    format_duration(out->right, "-", span_s - elapsed);
+    format_duration(out->left, "", elapsed, hour_seconds);
+    format_duration(out->right, "-", span_s - elapsed, hour_seconds);
   }
 }
 

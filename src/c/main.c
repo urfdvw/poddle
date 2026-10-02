@@ -268,7 +268,8 @@ static bool prv_period_active(const struct tm *t) {
 static void prv_draw_progress(GContext *ctx, const struct tm *t) {
   ProgressInfo info;
   if (prv_period_active(t)) {
-    period_progress(&s_period, t->tm_hour, t->tm_min, t->tm_sec, prv_is_24h(), &info);
+    period_progress(&s_period, t->tm_hour, t->tm_min, t->tm_sec, prv_is_24h(),
+                    s_orientation == ORIENTATION_LANDSCAPE, &info);
   } else {
     progress_info(s_progress_mode, s_label_format, t->tm_hour, t->tm_min, t->tm_sec,
                   prv_is_24h(), &info);

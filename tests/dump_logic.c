@@ -112,13 +112,15 @@ int main(void) {
   for (unsigned s = 0; s < sizeof(SPANS) / sizeof(SPANS[0]); s++) {
     for (int fmt = 0; fmt < 2; fmt++) {
       for (int is24 = 0; is24 < 2; is24++) {
-        const PeriodConfig p = {PERIOD_REPEAT_DAILY, 0, 0, SPANS[s][0], SPANS[s][1],
-                                (LabelFormat)fmt};
-        for (int t = SPANS[s][0] * 60; t < SPANS[s][1] * 60; t++) {
-          ProgressInfo pi;
-          period_progress(&p, t / 3600, t / 60 % 60, t % 60, is24, &pi);
-          printf("pprogress %d %d %d %d %d|%ld/%ld|%s|%s\n", SPANS[s][0], SPANS[s][1], fmt,
-                 is24, t, (long)pi.num, (long)pi.den, pi.left, pi.right);
+        for (int hs = 0; hs < 2; hs++) {
+          const PeriodConfig p = {PERIOD_REPEAT_DAILY, 0, 0, SPANS[s][0], SPANS[s][1],
+                                  (LabelFormat)fmt};
+          for (int t = SPANS[s][0] * 60; t < SPANS[s][1] * 60; t++) {
+            ProgressInfo pi;
+            period_progress(&p, t / 3600, t / 60 % 60, t % 60, is24, hs, &pi);
+            printf("pprogress %d %d %d %d %d %d|%ld/%ld|%s|%s\n", SPANS[s][0], SPANS[s][1], fmt,
+                   is24, hs, t, (long)pi.num, (long)pi.den, pi.left, pi.right);
+          }
         }
       }
     }

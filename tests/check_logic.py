@@ -60,9 +60,11 @@ def progress(mode, fmt, is24, t):
     return f"{elapsed}/3600|{labels[0]}|{labels[1]}"
 
 
-def duration(sign, sec):
+def duration(sign, sec, hour_seconds):
     if sec < 3600:
         return f"{sign}{sec // 60:02d}:{sec % 60:02d}"
+    if not hour_seconds:
+        return f"{sign}{sec // 3600}:{sec // 60 % 60:02d}"
     return f"{sign}{sec // 3600}:{sec // 60 % 60:02d}:{sec % 60:02d}"
 
 
@@ -92,13 +94,13 @@ def pactive(repeat, date, weekdays, start, end, mday, wday, t):
     return int(repeat == 3)
 
 
-def pprogress(start, end, fmt, is24, t):
+def pprogress(start, end, fmt, is24, hs, t):
     span = (end - start) * 60
     elapsed = (t if fmt == 1 else t // 60 * 60) - start * 60
     if fmt == 0:
         labels = (clock(start // 60, start % 60, is24), clock(end // 60, end % 60, is24))
     else:
-        labels = (duration("", elapsed), duration("-", span - elapsed))
+        labels = (duration("", elapsed, hs), duration("-", span - elapsed, hs))
     return f"{elapsed}/{span}|{labels[0]}|{labels[1]}"
 
 

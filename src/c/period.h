@@ -34,8 +34,10 @@ int period_parse_time(const char *text);
 // matching day. year is the full year, month 1-12.
 bool period_active(const PeriodConfig *cfg, int year, int month, int mday, int wday,
                    int hour24, int minute);
-// Bar and labels while the period is active.
+// Bar and labels while the period is active. `hour_seconds`: elapsed /
+// remaining values of an hour or more show H:MM:SS (landscape) rather than
+// H:MM (portrait, where two H:MM:SS labels do not fit side by side).
 void period_progress(const PeriodConfig *cfg, int hour24, int minute, int second, bool is_24h,
-                     ProgressInfo *out);
+                     bool hour_seconds, ProgressInfo *out);
 // Whether the period's labels need a per-second redraw.
 bool period_needs_seconds(const PeriodConfig *cfg);

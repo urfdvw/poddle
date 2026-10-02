@@ -38,30 +38,34 @@ def ink(m, text):
     return adv - m[text[0]][1] - m[text[-1]][2]
 
 
-def duration(sign, sec):
+def duration(sign, sec, hour_seconds):
+    # Same as format_duration(): H:MM:SS in landscape, H:MM in portrait.
     if sec < 3600:
         return f"{sign}{sec // 60:02d}:{sec % 60:02d}"
+    if not hour_seconds:
+        return f"{sign}{sec // 3600}:{sec // 60 % 60:02d}"
     return f"{sign}{sec // 3600}:{sec // 60 % 60:02d}:{sec % 60:02d}"
 
 
 def main():
     for name, widths, margin in SETS:
         m = metrics(name)
-        # Widest pair for each span: the labels only depend on (span, elapsed).
-        n = 1439 * 60 + 1
-        lw = [ink(m, duration("", s)) for s in range(n)]
-        rw = [ink(m, duration("-", s)) for s in range(n)]
-        worst = {}
-        for span_min in range(1, 1440):
-            span = span_min * 60
-            totals = list(map(operator.add, lw[:span], rw[span:0:-1]))
-            total = max(totals)
-            e = totals.index(total)
-            worst[span_min] = (total, duration("", e), duration("-", span - e))
         existing = max(ink(m, a) + ink(m, b) for a, b in
                        [(f"{e // 60:02d}:{e % 60:02d}", f"-{(3600 - e) // 60:02d}:{(3600 - e) % 60:02d}")
                         for e in range(3600)])
         for orient, w in zip(("portrait", "landscape"), widths):
+            # Widest pair for each span: the labels only depend on (span, elapsed).
+            hs = orient == "landscape"
+            n = 1439 * 60 + 1
+            lw = [ink(m, duration("", s, hs)) for s in range(n)]
+            rw = [ink(m, duration("-", s, hs)) for s in range(n)]
+            worst = {}
+            for span_min in range(1, 1440):
+                span = span_min * 60
+                totals = list(map(operator.add, lw[:span], rw[span:0:-1]))
+                total = max(totals)
+                e = totals.index(total)
+                worst[span_min] = (total, duration("", e, hs), duration("-", span - e, hs))
             room = w - 2 * margin
             gap_existing = room - existing
             bad = [s for s, (t, _, _) in worst.items() if room - t <= 0]
