@@ -25,6 +25,9 @@ BANDS = {
                              ("track", 135, 145), ("labels", 146, 167)],
 }
 GAP = 7  # px of empty columns that separate two elements in a band
+# The status row and separator were deliberately moved up from the mockup
+# (see README, layout values); they are reported but not scored.
+UNSCORED = {"status", "separator"}
 
 
 def ink(path):
@@ -63,6 +66,9 @@ def main():
         a, b = elements(mock, y0, y1), elements(watch, y0, y1)
         print(f"{name:9s} mock  {a}")
         print(f"{'':9s} watch {b}")
+        if name in UNSCORED:
+            print(f"{'':9s} (not scored: moved on purpose)")
+            continue
         if len(a) != len(b):
             print(f"{'':9s} ELEMENT COUNT DIFFERS")
             worst = max(worst, 99)
@@ -81,7 +87,7 @@ def main():
             top = abs((ea[1] + ea[3]) - (eb[1] + eb[3])) / 2  # vertical center
             print(f"{'':9s} offset x {d:g}  y {top:g}  ({ea} -> {eb})")
             worst = max(worst, d, top)
-    print(f"max anchor/top offset: {worst}px")
+    print(f"max anchor/top offset (date row and below): {worst}px")
 
     img = Image.new("RGB", (w, h), "white")
     for y in range(h):
