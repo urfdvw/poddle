@@ -28,6 +28,9 @@ typedef struct {
 void format_clock(char *buf, int hour24, int minute, bool is_24h);
 // "6/18": month 1-12, day 1-31, no zero padding.
 void format_date(char *buf, int month, int mday);
+// sign + "MM:SS"; from one hour up "H:MM:SS", or "H:MM" (seconds dropped,
+// not rounded) without `hour_seconds`.
+void format_duration(char *buf, const char *sign, int total_seconds, bool hour_seconds);
 void progress_info(ProgressMode mode, LabelFormat format, int hour24, int minute, int second,
                    bool is_24h, ProgressInfo *out);
 // Whether the configuration needs a per-second redraw.

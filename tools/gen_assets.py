@@ -486,7 +486,7 @@ def write_header(scales):
                              f"{e['ox']:2d}, {e['adv']:3d}, {e['lsb']:2d}, {e['rsb']:2d} }},"
                              f"  // {label}")
             lines.append("};")
-        lines.append(f"// icons_color: 1px larger on every side; draw at (x - 1, y - 1).")
+        lines.append("// icons_color: 1px larger on every side; draw at (x - 1, y - 1).")
         lines.append(f"static const SheetEntry ASSET_ICON_COLOR_ENTRIES_{sfx}[ICON_COUNT] = {{")
         for e in sheets["icons"]["color_entries"]:
             lines.append(f"  {{ {e['py']:4d}, {e['px']}, {e['w']:3d}, {e['h']:2d}, "

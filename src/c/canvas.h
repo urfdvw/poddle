@@ -6,7 +6,7 @@
 // or the screen turned sideways in landscape (e.g. 168x144 for a 144x168
 // screen). Landscape loads sprite sheets whose glyphs and icons were
 // rotated 90 degrees clockwise at build time, so a canvas rect only has its
-// origin moved onto the physical screen (canvas_to_screen); portrait loads
+// origin moved onto the physical screen; portrait loads
 // the upright sheets and draws 1:1. Either way no pixels are rotated at
 // runtime.
 #define SCREEN_W PBL_DISPLAY_WIDTH
@@ -31,12 +31,6 @@ typedef struct {
   uint8_t index;
 } Glyph;
 
-typedef struct {
-  int adv;    // pen advance of the whole run
-  int ink_l;  // ink extent relative to the pen start: [ink_l, ink_r)
-  int ink_r;
-} RunMetrics;
-
 // Loads the sheets for the orientation (reloads if it changed).
 void canvas_init(Orientation orientation);
 // Color theme: icons come from the tinted icon sheet (color platforms only;
@@ -46,12 +40,10 @@ void canvas_deinit(void);
 int canvas_width(void);
 int canvas_height(void);
 
-GRect canvas_to_screen(GRect r);
 void canvas_fill_rect(GContext *ctx, int x, int y, int w, int h);
 
-RunMetrics canvas_measure(const Glyph *run, int count);
-// Draws a run with its cap top at canvas row cap_top.
-void canvas_draw_run(GContext *ctx, const Glyph *run, int count, int pen_x, int cap_top);
+// Glyph runs, placed by their ink (left edge, right edge or center) with
+// the cap top at canvas row cap_top.
 void canvas_draw_left(GContext *ctx, const Glyph *run, int count, int ink_x, int cap_top);
 void canvas_draw_right(GContext *ctx, const Glyph *run, int count, int ink_right, int cap_top);
 void canvas_draw_centered(GContext *ctx, const Glyph *run, int count, int center_x,

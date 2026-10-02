@@ -6,6 +6,8 @@
 # MODE: 0 minute, 1 hour. FORMAT: 0 segment start/end, 1 elapsed/remaining.
 # ORIENT: 0 portrait (default), 1 landscape. THEME: 0 B/W (default), 1 color.
 # DISCONNECTED: 0 phone connected (default), 1 disconnected.
+# PODDLE_EXTRA_DEFINES adds more demo defines, e.g. a custom period:
+#   DEMO_PERIOD_START=540 DEMO_PERIOD_END=1020 DEMO_PERIOD_FORMAT=1 (minutes, daily)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 out="$1"; time="${2:-15:29:18}"; date="${3:-10/1/4}"
@@ -14,7 +16,7 @@ IFS=: read -r hh mm ss <<<"$time"
 IFS=/ read -r mo md wd <<<"$date"
 export PODDLE_DEFINES="DEMO_HOUR=$((10#$hh)) DEMO_MIN=$((10#$mm)) DEMO_SEC=$((10#$ss))
   DEMO_MON=$mo DEMO_MDAY=$md DEMO_WDAY=$wd DEMO_PROGRESS_MODE=$mode
-  DEMO_LABEL_FORMAT=$format DEMO_BATTERY=$battery DEMO_QUIET=$quiet DEMO_24H=$h24 DEMO_ORIENTATION=$orient DEMO_THEME=$theme DEMO_DISCONNECTED=$disconnected"
+  DEMO_LABEL_FORMAT=$format DEMO_BATTERY=$battery DEMO_QUIET=$quiet DEMO_24H=$h24 DEMO_ORIENTATION=$orient DEMO_THEME=$theme DEMO_DISCONNECTED=$disconnected ${PODDLE_EXTRA_DEFINES:-}"
 pebble build >/dev/null 2>&1 || { pebble build; exit 1; }
 cp build/poddle.pbw "${TMPDIR:-/tmp}/poddle-demo.pbw"
 unset PODDLE_DEFINES

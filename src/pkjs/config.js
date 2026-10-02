@@ -67,6 +67,71 @@ module.exports = [
     items: [
       {
         type: 'heading',
+        defaultValue: 'Custom period'
+      },
+      {
+        type: 'text',
+        defaultValue: 'Between the start and end time on the chosen days, the bar runs from ' +
+          'start to end. Outside it, the Progress bar settings apply.'
+      },
+      {
+        type: 'select',
+        messageKey: 'PeriodRepeat',
+        label: 'Active on',
+        defaultValue: '0',
+        options: [
+          { label: 'Off', value: '0' },
+          { label: 'One date', value: '1' },
+          { label: 'Days of the week', value: '2' },
+          { label: 'Every day', value: '3' }
+        ]
+      },
+      {
+        type: 'input',
+        messageKey: 'PeriodDate',
+        label: 'Date',
+        defaultValue: '',
+        attributes: { type: 'date' }
+      },
+      {
+        type: 'checkboxgroup',
+        messageKey: 'PeriodWeekdays',
+        label: 'Days',
+        defaultValue: [false, true, true, true, true, true, false],
+        options: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      },
+      {
+        type: 'input',
+        messageKey: 'PeriodStart',
+        label: 'Start',
+        defaultValue: '09:00',
+        attributes: { type: 'time' }
+      },
+      {
+        type: 'input',
+        messageKey: 'PeriodEnd',
+        label: 'End',
+        defaultValue: '17:00',
+        description: 'Must be after the start, on the same day.',
+        attributes: { type: 'time' }
+      },
+      {
+        type: 'select',
+        messageKey: 'PeriodLabelFormat',
+        label: 'Labels show',
+        defaultValue: '1',
+        options: [
+          { label: 'Start / end', value: '0' },
+          { label: 'Elapsed / remaining', value: '1' }
+        ]
+      }
+    ]
+  },
+  {
+    type: 'section',
+    items: [
+      {
+        type: 'heading',
         defaultValue: 'Battery Saving'
       },
       {
