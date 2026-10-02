@@ -82,7 +82,7 @@ module.exports = [
       {
         type: 'input',
         messageKey: 'UpdateInterval',
-        label: 'Redraw period (s)',
+        label: 'Redraw period (sec)',
         defaultValue: '1',
         description: 'A whole number from 1 to 60.',
         attributes: {
