@@ -41,7 +41,7 @@ def ink(m, text):
 def duration(sign, sec):
     if sec < 3600:
         return f"{sign}{sec // 60:02d}:{sec % 60:02d}"
-    return f"{sign}{sec // 3600:02d}:{sec // 60 % 60:02d}:{sec % 60:02d}"
+    return f"{sign}{sec // 3600}:{sec // 60 % 60:02d}:{sec % 60:02d}"
 
 
 def main():

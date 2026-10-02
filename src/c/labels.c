@@ -26,7 +26,7 @@ void format_duration(char *buf, const char *sign, int total_seconds) {
     prv_format_mmss(buf, sign, total_seconds);
     return;
   }
-  snprintf(buf, LABEL_BUF_SIZE, "%s%02d:%02d:%02d", sign, total_seconds / 3600,
+  snprintf(buf, LABEL_BUF_SIZE, "%s%d:%02d:%02d", sign, total_seconds / 3600,
            total_seconds / 60 % 60, total_seconds % 60);
 }
 

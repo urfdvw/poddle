@@ -141,7 +141,7 @@ period the Progress bar settings apply as usual.
   otherwise. The period covers start ≤ now < end.
 - **Labels show**: its own setting, same choices as the progress bar.
   Start / end shows the two times (12h/24h like the status row). Elapsed /
-  remaining shows `MM:SS`, and `HH:MM:SS` once a value reaches one hour.
+  remaining shows `MM:SS`, and `H:MM:SS` once a value reaches one hour.
 
 `src/c/period.c` holds the logic (checked by `tests/check_logic.py`); the
 config page's show/hide and end-after-start check are a Clay custom
@@ -149,11 +149,12 @@ function in `src/pkjs/index.js`. Whether the face needs seconds is
 re-checked on every wake-up, so the tick or timer switches when the period
 starts or ends.
 
-`HH:MM:SS` labels are wide: `tools/label_fit.py` measures every label pair
-from the sprite metrics. In landscape they always fit (13px gap at worst
-on 144x168, 9px on Pebble Time 2). In portrait, once the period is two
-hours or longer, both labels can be `HH:MM:SS` at the same time and then
-overlap (by up to 11px on 144x168, 19px on Pebble Time 2).
+`H:MM:SS` labels are wide: `tools/label_fit.py` measures every label pair
+from the sprite metrics. In landscape they always fit (19px gap at worst
+on 144x168, 17px on Pebble Time 2). In portrait they fit for periods
+under 20 hours on 144x168 and under 12 hours on Pebble Time 2; longer
+periods can overlap while one label has a two-digit hour (by up to 5px
+and 11px).
 
 ### Color theme (basalt, emery)
 
