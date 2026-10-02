@@ -163,11 +163,11 @@ seconds, the **Battery Saving** settings decide how often it redraws:
 - **Redraw schedule: Exact** (default): every X seconds, on instants whose
   Unix time is a multiple of X, so with X = 5 the seconds read :00, :05,
   :10, … X = 1 (the default) uses the firmware's second tick, as before.
-- **Redraw schedule: Random**: X is silently capped at 55. With
-  Y = 60 − X, after each redraw it waits X − 0.5·Y + U[0, Y) seconds
-  (uniform), so updates come X seconds apart on average and at most
-  30 + X/2 < 60 seconds apart: no minute goes without a redraw. For X < 20
-  the low end of that range is below zero; such draws wait 1 second.
+- **Redraw schedule: Random**: after each redraw, waits a uniform random
+  time that averages X seconds and is always under 60, so no minute goes
+  without a redraw. For X ≤ 40 it waits 0.5·X + U[0, X) seconds. Above
+  40, X is silently capped at 55 and, with Y = 60 − X, it waits
+  X − 0.5·Y + U[0, Y) seconds.
 - **Redraw period (sec)** (X): a whole number from 1 to 60 (default
   1). Blank or non-numeric input falls back to 1; larger values are capped
   at 60.

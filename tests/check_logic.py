@@ -92,10 +92,14 @@ def main():
             want = got if ok else f"a delay in [1, {period}] reaching a multiple of {period}"
         else:  # random
             interval, rnd = map(int, key.split())
-            x = min(interval, 55) * 1000
-            y = 60000 - x
-            want = str(max(1000, x - y // 2 + rnd % y))
-            assert int(want) < 60000
+            if interval <= 40:
+                x = interval * 1000
+                want = str(x // 2 + rnd % x)
+            else:
+                x = min(interval, 55) * 1000
+                y = 60000 - x
+                want = str(x - y // 2 + rnd % y)
+            assert 0 < int(want) < 60000
         counts[kind] = counts.get(kind, 0) + 1
         if got != want:
             failures += 1
