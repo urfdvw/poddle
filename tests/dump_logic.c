@@ -3,6 +3,7 @@
 
 #include "../src/c/assets.h"
 #include "../src/c/labels.h"
+#include "../src/c/period.h"
 #include "../src/c/schedule.h"
 #include "../src/c/time_words.h"
 
@@ -69,6 +70,57 @@ int main(void) {
     for (int r = 0; r < 9; r++) {
       printf("random %d %lu|%lu\n", interval, (unsigned long)RND[r],
              (unsigned long)update_delay_ms(UPDATE_SCHEDULE_RANDOM, interval, 0, 0, RND[r]));
+    }
+  }
+  // Custom period: parsing.
+  static const char *DATES[] = {"2026-10-02", "1999-01-31", "2026-13-01", "2026-1-01",
+                                "2026-10-02x", "", "abcd-ef-gh", "2026-00-10", "2026-12-32"};
+  for (unsigned i = 0; i < sizeof(DATES) / sizeof(DATES[0]); i++) {
+    printf("pdate %s|%ld\n", DATES[i], (long)period_parse_date(DATES[i]));
+  }
+  static const char *TIMES[] = {"00:00", "09:30", "23:59", "24:00", "12:60", "9:30",
+                                "09:30:00", "09:30x", "", "ab:cd"};
+  for (unsigned i = 0; i < sizeof(TIMES) / sizeof(TIMES[0]); i++) {
+    printf("ptime %s|%d\n", TIMES[i], period_parse_time(TIMES[i]));
+  }
+  // Custom period: when it is active. 2026-10-01 is a Thursday (wday 4);
+  // two weeks, every minute.
+  static const PeriodConfig ACTIVE[] = {
+    {PERIOD_REPEAT_OFF, 0, 0x7f, 540, 1020, LABEL_FORMAT_ELAPSED},
+    {PERIOD_REPEAT_DATE, 20261005, 0, 540, 1020, LABEL_FORMAT_ELAPSED},
+    {PERIOD_REPEAT_WEEKDAYS, 0, 0x3e, 0, 1, LABEL_FORMAT_SEGMENT},
+    {PERIOD_REPEAT_WEEKDAYS, 0, 0x41, 1380, 1439, LABEL_FORMAT_ELAPSED},
+    {PERIOD_REPEAT_DAILY, 0, 0, 0, 1439, LABEL_FORMAT_ELAPSED},
+    {PERIOD_REPEAT_DAILY, 0, 0, 600, 600, LABEL_FORMAT_ELAPSED},   // empty
+    {PERIOD_REPEAT_DAILY, 0, 0, 700, 600, LABEL_FORMAT_ELAPSED},   // end before start
+    {PERIOD_REPEAT_DAILY, 0, 0, -1, 600, LABEL_FORMAT_ELAPSED},    // unparsed start
+  };
+  for (unsigned c = 0; c < sizeof(ACTIVE) / sizeof(ACTIVE[0]); c++) {
+    const PeriodConfig *p = &ACTIVE[c];
+    for (int day = 0; day < 14; day++) {
+      const int mday = 1 + day, wday = (4 + day) % 7;
+      for (int t = 0; t < 1440; t++) {
+        printf("pactive %d %ld %d %d %d %d %d %d|%d\n", p->repeat, (long)p->date, p->weekdays,
+               p->start_min, p->end_min, mday, wday, t,
+               period_active(p, 2026, 10, mday, wday, t / 60, t % 60));
+      }
+    }
+  }
+  // Custom period: bar and labels, every second inside a few periods.
+  static const int16_t SPANS[][2] = {{540, 1020}, {0, 1439}, {600, 601}, {600, 660}, {600, 661},
+                                     {1380, 1439}};
+  for (unsigned s = 0; s < sizeof(SPANS) / sizeof(SPANS[0]); s++) {
+    for (int fmt = 0; fmt < 2; fmt++) {
+      for (int is24 = 0; is24 < 2; is24++) {
+        const PeriodConfig p = {PERIOD_REPEAT_DAILY, 0, 0, SPANS[s][0], SPANS[s][1],
+                                (LabelFormat)fmt};
+        for (int t = SPANS[s][0] * 60; t < SPANS[s][1] * 60; t++) {
+          ProgressInfo pi;
+          period_progress(&p, t / 3600, t / 60 % 60, t % 60, is24, &pi);
+          printf("pprogress %d %d %d %d %d|%ld/%ld|%s|%s\n", SPANS[s][0], SPANS[s][1], fmt,
+                 is24, t, (long)pi.num, (long)pi.den, pi.left, pi.right);
+        }
+      }
     }
   }
   return 0;

@@ -124,8 +124,36 @@ time, sound on:
 
 Settings (Clay): orientation (portrait/landscape), theme (color screens
 only), what the bar measures (minute/hour), what the labels show
-(start-end/elapsed-remaining), and Battery Saving (redraw schedule and
-period, below).
+(start-end/elapsed-remaining), a custom period (below), and Battery Saving
+(redraw schedule and period, below).
+
+### Custom period
+
+Between a start and an end time on chosen days, the progress bar runs from
+the start to the end instead of over the minute or hour; outside the
+period the Progress bar settings apply as usual.
+
+- **Active on**: Off (default), One date (defaults to the day the settings
+  page is opened), Days of the week (checkboxes, Monday to Friday by
+  default), or Every day.
+- **Start** / **End**: times of day. The end must be after the start on the
+  same day (no crossing midnight); the settings page will not save
+  otherwise. The period covers start ≤ now < end.
+- **Labels show**: its own setting, same choices as the progress bar.
+  Start / end shows the two times (12h/24h like the status row). Elapsed /
+  remaining shows `MM:SS`, and `HH:MM:SS` once a value reaches one hour.
+
+`src/c/period.c` holds the logic (checked by `tests/check_logic.py`); the
+config page's show/hide and end-after-start check are a Clay custom
+function in `src/pkjs/index.js`. Whether the face needs seconds is
+re-checked on every wake-up, so the tick or timer switches when the period
+starts or ends.
+
+`HH:MM:SS` labels are wide: `tools/label_fit.py` measures every label pair
+from the sprite metrics. In landscape they always fit (13px gap at worst
+on 144x168, 9px on Pebble Time 2). In portrait, once the period is two
+hours or longer, both labels can be `HH:MM:SS` at the same time and then
+overlap (by up to 11px on 144x168, 19px on Pebble Time 2).
 
 ### Color theme (basalt, emery)
 
@@ -157,7 +185,8 @@ into a cached 8-bit bitmap. Text stays black.
 ![Color theme](docs/screenshots/color/all_color.png)
 
 The face needs seconds when the bar is in minute mode or the labels show
-elapsed/remaining; otherwise it only redraws once a minute. While it shows
+elapsed/remaining (inside a custom period: when its labels show
+elapsed/remaining); otherwise it only redraws once a minute. While it shows
 seconds, the **Battery Saving** settings decide how often it redraws:
 
 - **Redraw schedule: Exact** (default): every X seconds, on instants whose
@@ -259,11 +288,15 @@ Every state below comes from the emulator, with the time, battery and settings p
 ```sh
 python3 tools/gen_assets.py     # regenerate resources/images/*.png (both orientations) + src/c/assets.h
 python3 tests/check_logic.py    # host-side logic tests
+python3 tools/label_fit.py      # do the progress labels fit side by side?
 pebble build && cp build/poddle.pbw dist/
 
 tools/emu.sh start
 # pinned demo build: time date/wday mode format battery quiet 24h orientation theme disconnected
 tools/screenshot.sh /tmp/shot 15:29:18 10/1/4 1 1 65 0 0 0 0 0
+# custom period 09:00-17:00 (daily), elapsed/remaining labels
+PODDLE_EXTRA_DEFINES="DEMO_PERIOD_START=540 DEMO_PERIOD_END=1020 DEMO_PERIOD_FORMAT=1" \
+  tools/screenshot.sh /tmp/period 12:49:20 10/2/5
 NODE_PATH=$(npm root -g) node tools/render_mock.js 2026-10-01T15:29:18 /tmp/mock
 python3 tools/compare_mock.py /tmp/mock_portrait_hour.png /tmp/shot_canvas.png /tmp/cmp
 tools/docs_screenshots.sh       # regenerate everything under docs/screenshots/
@@ -277,7 +310,8 @@ normal `pebble build` leaves them out.
 
 ## Repository layout
 
-- `src/c/` — watch face (`main.c`), canvas blitting, time words, labels
+- `src/c/` — watch face (`main.c`), canvas blitting, time words, labels,
+  Battery Saving schedule, custom period
 - `src/c/assets.h`, `resources/images/` — generated sprite sheets (committed)
 - `src/pkjs/` — Clay config page
 - `tools/` — asset pipeline, SDK setup, emulator/screenshot/compare/publish helpers

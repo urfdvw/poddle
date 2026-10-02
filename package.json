@@ -30,7 +30,13 @@
       "Orientation",
       "Theme",
       "UpdateSchedule",
-      "UpdateInterval"
+      "UpdateInterval",
+      "PeriodRepeat",
+      "PeriodDate",
+      "PeriodWeekdays[7]",
+      "PeriodStart",
+      "PeriodEnd",
+      "PeriodLabelFormat"
     ],
     "resources": {
       "media": [

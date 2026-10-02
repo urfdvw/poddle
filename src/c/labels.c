@@ -21,6 +21,15 @@ static void prv_format_mmss(char *buf, const char *sign, int total_seconds) {
   snprintf(buf, LABEL_BUF_SIZE, "%s%02d:%02d", sign, total_seconds / 60, total_seconds % 60);
 }
 
+void format_duration(char *buf, const char *sign, int total_seconds) {
+  if (total_seconds < 3600) {
+    prv_format_mmss(buf, sign, total_seconds);
+    return;
+  }
+  snprintf(buf, LABEL_BUF_SIZE, "%s%02d:%02d:%02d", sign, total_seconds / 3600,
+           total_seconds / 60 % 60, total_seconds % 60);
+}
+
 void progress_info(ProgressMode mode, LabelFormat format, int hour24, int minute, int second,
                    bool is_24h, ProgressInfo *out) {
   if (mode == PROGRESS_MODE_MINUTE) {

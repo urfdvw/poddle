@@ -3,6 +3,7 @@
 #include "assets.h"
 #include "canvas.h"
 #include "labels.h"
+#include "period.h"
 #include "schedule.h"
 #include "time_words.h"
 
@@ -79,6 +80,7 @@
 #define PERSIST_KEY_THEME 4
 #define PERSIST_KEY_UPDATE_SCHEDULE 5
 #define PERSIST_KEY_UPDATE_INTERVAL 6
+#define PERSIST_KEY_PERIOD 7  // the whole PeriodConfig
 
 // Theme (Clay). The color theme only exists on color screens.
 typedef enum {
@@ -113,7 +115,23 @@ static uint8_t s_battery_percent = 100;
 static bool s_connected = true;
 static UpdateSchedule s_update_schedule = UPDATE_SCHEDULE_EXACT;
 static int s_update_interval = UPDATE_INTERVAL_DEFAULT;
-static TimeUnits s_tick_units;
+static PeriodConfig s_period = {
+  .repeat = PERIOD_REPEAT_OFF,
+  .weekdays = 0x3e,  // Monday to Friday
+  .start_min = 9 * 60,
+  .end_min = 17 * 60,
+  .format = LABEL_FORMAT_ELAPSED,
+};
+
+// How the face is woken: a minute tick, a second tick, or the Battery
+// Saving timer alone.
+typedef enum {
+  WAKE_NONE = 0,
+  WAKE_MINUTE,
+  WAKE_SECOND,
+  WAKE_TIMER,
+} WakeMode;
+static WakeMode s_wake_mode;
 static AppTimer *s_update_timer;
 
 static bool prv_is_24h(void) {
@@ -242,10 +260,19 @@ static void prv_draw_words(GContext *ctx, const struct tm *t) {
   canvas_draw_centered(ctx, &ampm, 1, center_x, hour_y + WORDS_AMPM_DY);
 }
 
+static bool prv_period_active(const struct tm *t) {
+  return period_active(&s_period, t->tm_year + 1900, t->tm_mon + 1, t->tm_mday, t->tm_wday,
+                       t->tm_hour, t->tm_min);
+}
+
 static void prv_draw_progress(GContext *ctx, const struct tm *t) {
   ProgressInfo info;
-  progress_info(s_progress_mode, s_label_format, t->tm_hour, t->tm_min, t->tm_sec,
-                prv_is_24h(), &info);
+  if (prv_period_active(t)) {
+    period_progress(&s_period, t->tm_hour, t->tm_min, t->tm_sec, prv_is_24h(), &info);
+  } else {
+    progress_info(s_progress_mode, s_label_format, t->tm_hour, t->tm_min, t->tm_sec,
+                  prv_is_24h(), &info);
+  }
 
   const int w = canvas_width();
   const int h = canvas_height();
@@ -283,19 +310,11 @@ static void prv_draw_progress(GContext *ctx, const struct tm *t) {
   prv_draw_text(ctx, info.right, w - MARGIN_TEXT, label_y, GAlignRight);
 }
 
+static struct tm prv_now(void);
+
 static void prv_update_proc(Layer *layer, GContext *ctx) {
-  time_t now = time(NULL);
-  struct tm *t = localtime(&now);
-#ifdef DEMO_HOUR
-  // Screenshot builds: pin the clock (2026-10-01 is a Thursday).
-  t->tm_year = 2026 - 1900;
-  t->tm_mon = DEMO_MON - 1;
-  t->tm_mday = DEMO_MDAY;
-  t->tm_wday = DEMO_WDAY;
-  t->tm_hour = DEMO_HOUR;
-  t->tm_min = DEMO_MIN;
-  t->tm_sec = DEMO_SEC;
-#endif
+  const struct tm now = prv_now();
+  const struct tm *t = &now;
 
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_rect(ctx, layer_get_bounds(layer), 0, GCornerNone);
@@ -307,17 +326,42 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   prv_draw_progress(ctx, t);
 }
 
-static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  layer_mark_dirty(window_get_root_layer(s_window));
+static struct tm prv_now(void) {
+  time_t now = time(NULL);
+  struct tm t = *localtime(&now);
+#ifdef DEMO_HOUR
+  // Screenshot builds: pin the clock (2026-10-01 is a Thursday).
+  t.tm_year = 2026 - 1900;
+  t.tm_mon = DEMO_MON - 1;
+  t.tm_mday = DEMO_MDAY;
+  t.tm_wday = DEMO_WDAY;
+  t.tm_hour = DEMO_HOUR;
+  t.tm_min = DEMO_MIN;
+  t.tm_sec = DEMO_SEC;
+#endif
+  return t;
 }
 
-static void prv_arm_update_timer(void);
-
-static void prv_update_timer_handler(void *context) {
-  s_update_timer = NULL;
-  layer_mark_dirty(window_get_root_layer(s_window));
-  prv_arm_update_timer();
+// Without seconds on screen a minute tick is all the face needs. With
+// seconds, exact 1s keeps the firmware's second tick; any other Battery
+// Saving setting redraws from the timer alone, with no extra redraw on the
+// minute (random exists to stay off :00). Whether seconds are on screen
+// depends on the custom period, so this is re-checked on every wake-up.
+static WakeMode prv_wanted_wake_mode(void) {
+  const struct tm t = prv_now();
+  const bool seconds = prv_period_active(&t)
+                           ? period_needs_seconds(&s_period)
+                           : progress_needs_seconds(s_progress_mode, s_label_format);
+  if (!seconds) {
+    return WAKE_MINUTE;
+  }
+  const bool every_second =
+      s_update_schedule == UPDATE_SCHEDULE_EXACT && s_update_interval == 1;
+  return every_second ? WAKE_SECOND : WAKE_TIMER;
 }
+
+static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed);
+static void prv_update_timer_handler(void *context);
 
 static void prv_arm_update_timer(void) {
   time_t now_s;
@@ -328,30 +372,41 @@ static void prv_arm_update_timer(void) {
   s_update_timer = app_timer_register(delay, prv_update_timer_handler, NULL);
 }
 
-static void prv_subscribe_ticks(void) {
+// Switches to the wanted wake mode; with `force`, restarts it even when it
+// is unchanged (after a settings change).
+static void prv_apply_wake_mode(bool force) {
+  const WakeMode mode = prv_wanted_wake_mode();
+  if (mode == s_wake_mode && !force) {
+    return;
+  }
   if (s_update_timer) {
     app_timer_cancel(s_update_timer);
     s_update_timer = NULL;
   }
-  // Without seconds on screen a minute tick is all the face needs. With
-  // seconds, exact 1s keeps the firmware's second tick; any other Battery
-  // Saving setting redraws from the timer alone, with no extra redraw on the
-  // minute (random exists to stay off :00).
-  const bool seconds = progress_needs_seconds(s_progress_mode, s_label_format);
-  const bool every_second =
-      s_update_schedule == UPDATE_SCHEDULE_EXACT && s_update_interval == 1;
-  if (seconds && !every_second) {
-    if (s_tick_units) {
+  if (mode == WAKE_TIMER) {
+    if (s_wake_mode == WAKE_MINUTE || s_wake_mode == WAKE_SECOND) {
       tick_timer_service_unsubscribe();
-      s_tick_units = 0;
     }
     prv_arm_update_timer();
-    return;
+  } else if (mode != s_wake_mode) {
+    tick_timer_service_subscribe(mode == WAKE_SECOND ? SECOND_UNIT : MINUTE_UNIT,
+                                 prv_tick_handler);
   }
-  const TimeUnits units = seconds ? SECOND_UNIT : MINUTE_UNIT;
-  if (units != s_tick_units) {
-    tick_timer_service_subscribe(units, prv_tick_handler);
-    s_tick_units = units;
+  s_wake_mode = mode;
+}
+
+static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+  layer_mark_dirty(window_get_root_layer(s_window));
+  prv_apply_wake_mode(false);
+}
+
+static void prv_update_timer_handler(void *context) {
+  s_update_timer = NULL;
+  layer_mark_dirty(window_get_root_layer(s_window));
+  if (prv_wanted_wake_mode() == WAKE_TIMER) {
+    prv_arm_update_timer();
+  } else {
+    prv_apply_wake_mode(false);
   }
 }
 
@@ -381,6 +436,53 @@ static int32_t prv_tuple_int(const Tuple *t) {
     return atoi(t->value->cstring);
   }
   return t->value->int32;
+}
+
+// Reads the custom period keys; returns whether any were present.
+static bool prv_read_period(DictionaryIterator *iter) {
+  bool found = false;
+  Tuple *t = dict_find(iter, MESSAGE_KEY_PeriodRepeat);
+  if (t) {
+    const int32_t repeat = prv_tuple_int(t);
+    s_period.repeat = repeat >= PERIOD_REPEAT_DATE && repeat <= PERIOD_REPEAT_DAILY
+                          ? (PeriodRepeat)repeat
+                          : PERIOD_REPEAT_OFF;
+    found = true;
+  }
+  t = dict_find(iter, MESSAGE_KEY_PeriodDate);
+  if (t && t->type == TUPLE_CSTRING) {
+    s_period.date = period_parse_date(t->value->cstring);
+    found = true;
+  }
+  // The checkboxes arrive as seven keys, Sunday first.
+  for (int day = 0; day < 7; day++) {
+    t = dict_find(iter, MESSAGE_KEY_PeriodWeekdays + day);
+    if (t) {
+      if (prv_tuple_int(t)) {
+        s_period.weekdays |= 1 << day;
+      } else {
+        s_period.weekdays &= ~(1 << day);
+      }
+      found = true;
+    }
+  }
+  t = dict_find(iter, MESSAGE_KEY_PeriodStart);
+  if (t && t->type == TUPLE_CSTRING) {
+    s_period.start_min = period_parse_time(t->value->cstring);
+    found = true;
+  }
+  t = dict_find(iter, MESSAGE_KEY_PeriodEnd);
+  if (t && t->type == TUPLE_CSTRING) {
+    s_period.end_min = period_parse_time(t->value->cstring);
+    found = true;
+  }
+  t = dict_find(iter, MESSAGE_KEY_PeriodLabelFormat);
+  if (t) {
+    s_period.format =
+        prv_tuple_int(t) == LABEL_FORMAT_SEGMENT ? LABEL_FORMAT_SEGMENT : LABEL_FORMAT_ELAPSED;
+    found = true;
+  }
+  return found;
 }
 
 static void prv_inbox_received(DictionaryIterator *iter, void *context) {
@@ -424,7 +526,10 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
         seconds < UPDATE_INTERVAL_MIN ? UPDATE_INTERVAL_DEFAULT : update_interval_clamp(seconds);
     persist_write_int(PERSIST_KEY_UPDATE_INTERVAL, s_update_interval);
   }
-  prv_subscribe_ticks();
+  if (prv_read_period(iter)) {
+    persist_write_data(PERSIST_KEY_PERIOD, &s_period, sizeof(s_period));
+  }
+  prv_apply_wake_mode(true);
   layer_mark_dirty(window_get_root_layer(s_window));
 }
 
@@ -434,6 +539,12 @@ static void prv_load_settings(void) {
   s_label_format = DEMO_LABEL_FORMAT;
   s_orientation = DEMO_ORIENTATION;
   s_theme = DEMO_THEME;
+#ifdef DEMO_PERIOD_START
+  s_period.repeat = PERIOD_REPEAT_DAILY;
+  s_period.start_min = DEMO_PERIOD_START;
+  s_period.end_min = DEMO_PERIOD_END;
+  s_period.format = DEMO_PERIOD_FORMAT;
+#endif
   return;
 #endif
   if (persist_exists(PERSIST_KEY_PROGRESS_MODE)) {
@@ -462,6 +573,9 @@ static void prv_load_settings(void) {
   if (persist_exists(PERSIST_KEY_UPDATE_INTERVAL)) {
     s_update_interval = update_interval_clamp(persist_read_int(PERSIST_KEY_UPDATE_INTERVAL));
   }
+  if (persist_get_size(PERSIST_KEY_PERIOD) == (int)sizeof(s_period)) {
+    persist_read_data(PERSIST_KEY_PERIOD, &s_period, sizeof(s_period));
+  }
 }
 
 static void prv_init(void) {
@@ -480,10 +594,10 @@ static void prv_init(void) {
   connection_service_subscribe((ConnectionHandlers){
     .pebble_app_connection_handler = prv_connection_handler,
   });
-  prv_subscribe_ticks();
+  prv_apply_wake_mode(true);
 
   app_message_register_inbox_received(prv_inbox_received);
-  app_message_open(128, 64);
+  app_message_open(512, 64);  // every Clay key arrives at once
 }
 
 static void prv_deinit(void) {
