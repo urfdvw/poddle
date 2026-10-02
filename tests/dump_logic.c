@@ -58,7 +58,7 @@ int main(void) {
     printf("clamp %d|%d\n", v, update_interval_clamp(v));
   }
   static const uint16_t MS[] = {0, 1, 500, 999};
-  for (int interval = 1; interval <= 59; interval++) {
+  for (int interval = 1; interval <= 60; interval++) {
     for (uint32_t now = 1790000000u; now < 1790000000u + 2 * 60; now++) {
       for (int m = 0; m < 4; m++) {
         printf("exact %d %lu %u|%lu\n", interval, (unsigned long)now, MS[m],

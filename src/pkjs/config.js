@@ -72,7 +72,7 @@ module.exports = [
       {
         type: 'select',
         messageKey: 'UpdateSchedule',
-        label: 'Update schedule',
+        label: 'Redraw schedule',
         defaultValue: '0',
         options: [
           { label: 'Exact', value: '0' },
@@ -82,15 +82,13 @@ module.exports = [
       {
         type: 'input',
         messageKey: 'UpdateInterval',
-        label: 'Update every [X] seconds',
+        label: 'Redraw period (s)',
         defaultValue: '1',
-        description: 'A whole number from 1 to 59. Exact redraws every X seconds; ' +
-          'Random waits 0.5\u00d7X plus a random 0 to X seconds each time (X on ' +
-          'average). Only applies while the face shows seconds.',
+        description: 'A whole number from 1 to 60.',
         attributes: {
           type: 'number',
           min: 1,
-          max: 59,
+          max: 60,
           step: 1,
           required: 'required'
         }

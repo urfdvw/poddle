@@ -124,8 +124,8 @@ time, sound on:
 
 Settings (Clay): orientation (portrait/landscape), theme (color screens
 only), what the bar measures (minute/hour), what the labels show
-(start-end/elapsed-remaining), and Battery Saving (update schedule and
-interval, below).
+(start-end/elapsed-remaining), and Battery Saving (redraw schedule and
+period, below).
 
 ### Color theme (basalt, emery)
 
@@ -160,14 +160,14 @@ The face needs seconds when the bar is in minute mode or the labels show
 elapsed/remaining; otherwise it only redraws once a minute. While it shows
 seconds, the **Battery Saving** settings decide how often it redraws:
 
-- **Update schedule: Exact** (default): every X seconds, on instants whose
+- **Redraw schedule: Exact** (default): every X seconds, on instants whose
   Unix time is a multiple of X, so with X = 5 the seconds read :00, :05,
   :10, … X = 1 (the default) uses the firmware's second tick, as before.
-- **Update schedule: Random**: after each redraw, waits 0.5·X + U[0, X)
+- **Redraw schedule: Random**: after each redraw, waits 0.5·X + U[0, X)
   seconds (uniform), so updates come X seconds apart on average.
-- **Update every [X] seconds**: a whole number from 1 to 59 (default 1).
-  Blank or non-numeric input falls back to 1; larger values are capped at
-  59.
+- **Redraw period (s)** (X): a whole number from 1 to 60 (default
+  1). Blank or non-numeric input falls back to 1; larger values are capped
+  at 60.
 
 Except with exact 1s, the redraws come from an `AppTimer`
 (`src/c/schedule.c` computes the delay), plus a minute tick so the time and

@@ -82,7 +82,7 @@ def main():
             mo, d = map(int, key.split())
             want = f"{mo}/{d}"
         elif kind == "clamp":
-            want = str(min(59, max(1, int(key))))
+            want = str(min(60, max(1, int(key))))
         elif kind == "exact":
             interval, now, ms = map(int, key.split())
             period = interval * 1000

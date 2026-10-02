@@ -10,7 +10,7 @@ typedef enum {
 } UpdateSchedule;
 
 #define UPDATE_INTERVAL_MIN 1
-#define UPDATE_INTERVAL_MAX 59
+#define UPDATE_INTERVAL_MAX 60
 #define UPDATE_INTERVAL_DEFAULT 1
 
 // Clamps a configured interval into [MIN, MAX]; out-of-range input that is
