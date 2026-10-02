@@ -8,7 +8,11 @@
 typedef enum {
   PROGRESS_MODE_MINUTE = 0,  // within the current minute
   PROGRESS_MODE_HOUR = 1,    // within the current hour
+  PROGRESS_MODE_STEPS = 2,   // today's steps toward a target (Health watches)
 } ProgressMode;
+
+#define STEP_TARGET_DEFAULT 8000
+#define STEP_TARGET_MAX 999999
 
 typedef enum {
   LABEL_FORMAT_SEGMENT = 0,  // segment start / segment end
@@ -33,5 +37,9 @@ void format_date(char *buf, int month, int mday);
 void format_duration(char *buf, const char *sign, int total_seconds, bool hour_seconds);
 void progress_info(ProgressMode mode, LabelFormat format, int hour24, int minute, int second,
                    bool is_24h, ProgressInfo *out);
+// Steps mode: the bar fills toward `target` (full once reached); left label
+// today's steps, right label the difference: "-N" still to go, "+N" past
+// the target, "0" exactly on it.
+void steps_info(int32_t steps, int32_t target, ProgressInfo *out);
 // Whether the configuration needs a per-second redraw.
 bool progress_needs_seconds(ProgressMode mode, LabelFormat format);

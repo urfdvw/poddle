@@ -1,7 +1,7 @@
 {
   "name": "poddle",
   "author": "River",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "keywords": [
     "pebble-app"
   ],
@@ -36,7 +36,8 @@
       "PeriodWeekdays[7]",
       "PeriodStart",
       "PeriodEnd",
-      "PeriodLabelFormat"
+      "PeriodLabelFormat",
+      "StepTarget"
     ],
     "resources": {
       "media": [
@@ -117,7 +118,8 @@
       ]
     },
     "capabilities": [
-      "configurable"
+      "configurable",
+      "health"
     ]
   }
 }

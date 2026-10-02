@@ -7,11 +7,26 @@
 #define PERSIST_KEY_UPDATE_SCHEDULE 5
 #define PERSIST_KEY_UPDATE_INTERVAL 6
 #define PERSIST_KEY_PERIOD 7  // the whole PeriodConfig
+#define PERSIST_KEY_STEP_TARGET 8
 
 // Each value is normalized the same way whether it comes from storage or
 // from the config page: anything unexpected falls back to the default.
 static ProgressMode prv_progress_mode(int32_t v) {
+#if defined(PBL_HEALTH)
+  if (v == PROGRESS_MODE_STEPS) {
+    return PROGRESS_MODE_STEPS;
+  }
+#endif
+  // Watches without Health (aplite) never offer steps; hour mode it is.
   return v == PROGRESS_MODE_MINUTE ? PROGRESS_MODE_MINUTE : PROGRESS_MODE_HOUR;
+}
+
+// Blank, non-numeric or below 1: the default; huge values are capped.
+static int32_t prv_step_target(int32_t v) {
+  if (v < 1) {
+    return STEP_TARGET_DEFAULT;
+  }
+  return v > STEP_TARGET_MAX ? STEP_TARGET_MAX : v;
 }
 
 static LabelFormat prv_label_format(int32_t v) {
@@ -43,6 +58,7 @@ void settings_load(Settings *s) {
     .theme = THEME_BW,
     .update_schedule = UPDATE_SCHEDULE_EXACT,
     .update_interval = UPDATE_INTERVAL_DEFAULT,
+    .step_target = STEP_TARGET_DEFAULT,
     .period = {
       .repeat = PERIOD_REPEAT_OFF,
       .weekdays = 0x3e,  // Monday to Friday
@@ -52,10 +68,13 @@ void settings_load(Settings *s) {
     },
   };
 #ifdef DEMO_PROGRESS_MODE
-  s->progress_mode = DEMO_PROGRESS_MODE;
+  s->progress_mode = prv_progress_mode(DEMO_PROGRESS_MODE);
   s->label_format = DEMO_LABEL_FORMAT;
   s->orientation = DEMO_ORIENTATION;
   s->theme = DEMO_THEME;
+#ifdef DEMO_STEP_TARGET
+  s->step_target = DEMO_STEP_TARGET;
+#endif
 #ifdef DEMO_PERIOD_START
   s->period.repeat = PERIOD_REPEAT_DAILY;
   s->period.start_min = DEMO_PERIOD_START;
@@ -81,6 +100,9 @@ void settings_load(Settings *s) {
   }
   if (persist_exists(PERSIST_KEY_UPDATE_INTERVAL)) {
     s->update_interval = update_interval_clamp(persist_read_int(PERSIST_KEY_UPDATE_INTERVAL));
+  }
+  if (persist_exists(PERSIST_KEY_STEP_TARGET)) {
+    s->step_target = prv_step_target(persist_read_int(PERSIST_KEY_STEP_TARGET));
   }
   if (persist_get_size(PERSIST_KEY_PERIOD) == (int)sizeof(s->period)) {
     persist_read_data(PERSIST_KEY_PERIOD, &s->period, sizeof(s->period));
@@ -175,6 +197,11 @@ void settings_apply_message(Settings *s, DictionaryIterator *iter) {
     s->update_interval =
         seconds < UPDATE_INTERVAL_MIN ? UPDATE_INTERVAL_DEFAULT : update_interval_clamp(seconds);
     persist_write_int(PERSIST_KEY_UPDATE_INTERVAL, s->update_interval);
+  }
+  t = dict_find(iter, MESSAGE_KEY_StepTarget);
+  if (t) {
+    s->step_target = prv_step_target(prv_tuple_int(t));
+    persist_write_int(PERSIST_KEY_STEP_TARGET, s->step_target);
   }
   if (prv_read_period(&s->period, iter)) {
     persist_write_data(PERSIST_KEY_PERIOD, &s->period, sizeof(s->period));

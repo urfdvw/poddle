@@ -258,6 +258,30 @@ static void prv_draw_words(GContext *ctx, const struct tm *t) {
   canvas_draw_centered(ctx, &ampm, 1, center_x, hour_y + WORDS_AMPM_DY);
 }
 
+// Today's step count; 0 without Health data (and always on aplite).
+static int32_t prv_steps_today(void) {
+#ifdef DEMO_STEPS
+  return DEMO_STEPS;
+#endif
+#if defined(PBL_HEALTH)
+  const time_t start = time_start_of_today();
+  const HealthServiceAccessibilityMask mask =
+      health_service_metric_accessible(HealthMetricStepCount, start, time(NULL));
+  if (mask & HealthServiceAccessibilityMaskAvailable) {
+    return (int32_t)health_service_sum_today(HealthMetricStepCount);
+  }
+#endif
+  return 0;
+}
+
+static bool prv_steps_mode(void) {
+#if defined(PBL_HEALTH)
+  return s_settings.progress_mode == PROGRESS_MODE_STEPS;
+#else
+  return false;
+#endif
+}
+
 static bool prv_period_active(const struct tm *t) {
   return period_active(&s_settings.period, t->tm_year + 1900, t->tm_mon + 1, t->tm_mday,
                        t->tm_wday, t->tm_hour, t->tm_min);
@@ -268,6 +292,8 @@ static void prv_draw_progress(GContext *ctx, const struct tm *t) {
   if (prv_period_active(t)) {
     period_progress(&s_settings.period, t->tm_hour, t->tm_min, t->tm_sec, prv_is_24h(),
                     s_settings.orientation == ORIENTATION_LANDSCAPE, &info);
+  } else if (prv_steps_mode()) {
+    steps_info(prv_steps_today(), s_settings.step_target, &info);
   } else {
     progress_info(s_settings.progress_mode, s_settings.label_format, t->tm_hour, t->tm_min,
                   t->tm_sec, prv_is_24h(), &info);
@@ -408,6 +434,17 @@ static void prv_battery_handler(BatteryChargeState state) {
   prv_redraw();
 }
 
+#if defined(PBL_HEALTH)
+// New step counts arrive as movement updates; the minute tick would catch
+// them too, this just shows them sooner.
+static void prv_health_handler(HealthEventType event, void *context) {
+  if (prv_steps_mode() &&
+      (event == HealthEventMovementUpdate || event == HealthEventSignificantUpdate)) {
+    prv_redraw();
+  }
+}
+#endif
+
 static void prv_inbox_received(DictionaryIterator *iter, void *context) {
   settings_apply_message(&s_settings, iter);
   canvas_init(s_settings.orientation);  // reloads the sheets only if it changed
@@ -433,6 +470,9 @@ static void prv_init(void) {
     .pebble_app_connection_handler = prv_connection_handler,
   });
   prv_apply_wake_mode(true);
+#if defined(PBL_HEALTH)
+  health_service_events_subscribe(prv_health_handler, NULL);
+#endif
 
   app_message_register_inbox_received(prv_inbox_received);
   app_message_open(512, 64);  // every Clay key arrives at once
@@ -443,6 +483,9 @@ static void prv_deinit(void) {
     app_timer_cancel(s_update_timer);
   }
   tick_timer_service_unsubscribe();
+#if defined(PBL_HEALTH)
+  health_service_events_unsubscribe();
+#endif
   battery_state_service_unsubscribe();
   connection_service_unsubscribe();
   window_destroy(s_window);

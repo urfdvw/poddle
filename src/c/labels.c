@@ -64,6 +64,23 @@ void progress_info(ProgressMode mode, LabelFormat format, int hour24, int minute
   }
 }
 
+void steps_info(int32_t steps, int32_t target, ProgressInfo *out) {
+  if (steps < 0) {
+    steps = 0;
+  }
+  if (target < 1) {
+    target = 1;
+  }
+  out->num = steps < target ? steps : target;
+  out->den = target;
+  snprintf(out->left, LABEL_BUF_SIZE, "%ld", (long)steps);
+  const int32_t diff = steps - target;
+  snprintf(out->right, LABEL_BUF_SIZE, diff > 0 ? "+%ld" : "%ld", (long)diff);
+}
+
 bool progress_needs_seconds(ProgressMode mode, LabelFormat format) {
+  if (mode == PROGRESS_MODE_STEPS) {
+    return false;
+  }
   return mode == PROGRESS_MODE_MINUTE || format == LABEL_FORMAT_ELAPSED;
 }

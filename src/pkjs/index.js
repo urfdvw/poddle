@@ -3,8 +3,22 @@ var clayConfig = require('./config');
 
 // Runs inside the config page (Clay serializes it), so it must not use
 // anything from this file's scope.
-function customPeriod() {
+function customFn() {
   var clay = this;
+  clay.on(clay.EVENTS.AFTER_BUILD, function() {
+    // Progress bar: steps mode shows a Target instead of the label format.
+    var mode = clay.getItemByMessageKey('ProgressMode');
+    var labels = clay.getItemByMessageKey('LabelFormat');
+    var target = clay.getItemByMessageKey('StepTarget');
+    function showForMode() {
+      var steps = mode.get() === '2';
+      if (steps) { labels.hide(); target.show(); } else { labels.show(); target.hide(); }
+    }
+    mode.on('change', showForMode);
+    showForMode();
+  });
+
+  // Custom period: show what the chosen "Active on" needs, check the times.
   clay.on(clay.EVENTS.AFTER_BUILD, function() {
     var repeat = clay.getItemByMessageKey('PeriodRepeat');
     var date = clay.getItemByMessageKey('PeriodDate');
@@ -48,4 +62,4 @@ function customPeriod() {
 }
 
 // eslint-disable-next-line no-unused-vars
-var clay = new Clay(clayConfig, customPeriod);
+var clay = new Clay(clayConfig, customFn);

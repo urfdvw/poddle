@@ -42,7 +42,7 @@ IMG_DIR = os.path.join(ROOT, "resources", "images")
 HEADER = os.path.join(ROOT, "src", "c", "assets.h")
 
 
-DIGIT_GLYPHS = list("0123456789:/-")
+DIGIT_GLYPHS = list("0123456789:/-+")
 WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]  # struct tm tm_wday order
 ONES = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
         "Ten", "Eleven", "Twelve"]
@@ -510,7 +510,7 @@ def write_header(scales):
 
 
 def build_scale(sc):
-    digit_names = {":": "COLON", "/": "SLASH", "-": "MINUS"}
+    digit_names = {":": "COLON", "/": "SLASH", "-": "MINUS", "+": "PLUS"}
     sheets = {
         "digits": build_text_sheet(sc, "digits",
                                    [(digit_names.get(c, c), c) for c in DIGIT_GLYPHS]),

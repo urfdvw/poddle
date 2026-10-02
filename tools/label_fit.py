@@ -17,7 +17,7 @@ import os
 import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CHARS = "0123456789:/-"
+CHARS = "0123456789:/-+"
 # (name, canvas widths [portrait, landscape], text margin)
 SETS = [("BASE", (144, 168), 8), ("LARGE", (200, 228), 11)]
 

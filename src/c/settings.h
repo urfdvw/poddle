@@ -22,6 +22,7 @@ typedef struct {
   Theme theme;
   UpdateSchedule update_schedule;
   int update_interval;
+  int32_t step_target;  // steps mode
   PeriodConfig period;
 } Settings;
 

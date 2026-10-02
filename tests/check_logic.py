@@ -103,6 +103,12 @@ def pprogress(start, end, fmt, is24, hs, t):
     return f"{elapsed}/{span}|{labels[0]}|{labels[1]}"
 
 
+def steps(n, target):
+    n, target = max(n, 0), max(target, 1)
+    diff = n - target
+    return f"{min(n, target)}/{target}|{n}|{'+' if diff > 0 else ''}{diff}"
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         exe = os.path.join(tmp, "dump_logic")
@@ -136,6 +142,8 @@ def main():
             # Lands on a multiple of the interval in Unix time, within one period.
             ok = 1 <= delay <= period and (now * 1000 + ms + delay) % period == 0
             want = got if ok else f"a delay in [1, {period}] reaching a multiple of {period}"
+        elif kind == "steps":
+            want = steps(*map(int, key.split()))
         elif kind == "pdate":
             want = str(pdate(key))
         elif kind == "ptime":

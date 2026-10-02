@@ -54,6 +54,17 @@ int main(void) {
       printf("date %d %d|%s\n", mo, d, buf);
     }
   }
+  // Steps mode.
+  static const int32_t STEPS[] = {-5, 0, 1, 7999, 8000, 8001, 12345, 999999, 1234567};
+  static const int32_t TARGETS[] = {-1, 0, 1, 8000, 999999};
+  for (unsigned i = 0; i < sizeof(STEPS) / sizeof(STEPS[0]); i++) {
+    for (unsigned j = 0; j < sizeof(TARGETS) / sizeof(TARGETS[0]); j++) {
+      ProgressInfo pi;
+      steps_info(STEPS[i], TARGETS[j], &pi);
+      printf("steps %ld %ld|%ld/%ld|%s|%s\n", (long)STEPS[i], (long)TARGETS[j], (long)pi.num,
+             (long)pi.den, pi.left, pi.right);
+    }
+  }
   // Battery Saving schedule.
   for (int v = -5; v <= 70; v++) {
     printf("clamp %d|%d\n", v, update_interval_clamp(v));
