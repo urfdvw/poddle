@@ -16,11 +16,14 @@
 // Pebble Time 2 (200x228), 22px sprites (13px caps): the base layout scaled
 // by 22/16 and rounded.
 #define MARGIN_TEXT 11
-#define STATUS_CAP_Y 16
-#define STATUS_ICON_Y 17
+// Status row: the 13px caps sit centered above the separator, with the
+// same 12px gap above the caps, between caps and separator, and between
+// separator and the date caps.
+#define STATUS_CAP_Y 12
+#define STATUS_ICON_Y 12  // 12px icons on the 13px caps
 #define STATUS_ICON_X 11
 #define BATTERY_INSET 33  // 25px body ends 8px from the right, nub hangs past it
-#define SEPARATOR_Y 46
+#define SEPARATOR_Y 37
 #define DATE_CAP_Y 50
 #define TRACK_X 10
 #define TRACK_INSET_BOTTOM 38
@@ -42,11 +45,14 @@
 // Frames 1-2 for portrait, Frame 3 for landscape; the spoken-time caps land
 // at y=69/88/108 in portrait and 57/76/96 in landscape.
 #define MARGIN_TEXT 8  // text ink keeps 8px from either edge
-#define STATUS_CAP_Y 11
-#define STATUS_ICON_Y 12  // 9px icons centered on the 34px status row
+// Status row: the 9px caps and icons sit centered above the separator
+// (9px above, 9px below), and the separator sits midway between them and the
+// date caps (9px / 8px: the nearest whole-pixel fit).
+#define STATUS_CAP_Y 9
+#define STATUS_ICON_Y 9  // 9px icons, same rows as the caps
 #define STATUS_ICON_X 8
 #define BATTERY_INSET 24  // 18px body ends 6px from the right, nub hangs past it
-#define SEPARATOR_Y 33
+#define SEPARATOR_Y 27
 #define DATE_CAP_Y 36
 #define TRACK_X 7
 #define TRACK_INSET_BOTTOM 28
@@ -82,8 +88,11 @@ typedef enum {
 // #feffff -> #b1b6b9; these are the nearest palette colors).
 #define COLOR_STATUS_TOP GColorWhite
 #define COLOR_STATUS_BOTTOM GColorLightGray
-#define COLOR_ACCENT GColorPictonBlue  // progress fill (the top-left icons are tinted
-                                       // GColorCobaltBlue in their sheet)
+// Progress fill: light blue with a lighter top third, like the battery's
+// two-tone charge (the top-left icons are tinted GColorCobaltBlue in their
+// sheet).
+#define COLOR_PROGRESS GColorPictonBlue
+#define COLOR_PROGRESS_TOP GColorCeleste
 // Battery: dark gray frame (in the tinted icon sheet), the charge split into
 // a light upper half and a darker lower half, after the reference's
 // #A5E07F fill under its highlight/shade gradient.
@@ -247,12 +256,16 @@ static void prv_draw_progress(GContext *ctx, const struct tm *t) {
 #ifdef PBL_COLOR
   if (prv_color_theme()) {
     // Inside the outline only, so the black frame stays intact.
-    graphics_context_set_fill_color(ctx, COLOR_ACCENT);
     int inner = fill_w - 1;
     if (inner > track_w - 2) {
       inner = track_w - 2;
     }
-    canvas_fill_rect(ctx, TRACK_X + 1, track_y + 1, inner, TRACK_H - 2);
+    const int inner_h = TRACK_H - 2;
+    const int top_h = (inner_h + 1) / 3;  // 1 of 3 rows, 2 of 5 on Pebble Time 2
+    graphics_context_set_fill_color(ctx, COLOR_PROGRESS_TOP);
+    canvas_fill_rect(ctx, TRACK_X + 1, track_y + 1, inner, top_h);
+    graphics_context_set_fill_color(ctx, COLOR_PROGRESS);
+    canvas_fill_rect(ctx, TRACK_X + 1, track_y + 1 + top_h, inner, inner_h - top_h);
     graphics_context_set_fill_color(ctx, GColorBlack);
   } else
 #endif

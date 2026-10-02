@@ -137,8 +137,9 @@ values to a reference recreation's title bar (`#feffff` → `#b1b6b9`):
   between). The separator line is hidden.
 - Top-left icons (connection / quiet time): dark blue (`GColorCobaltBlue`),
   so they read on the gray.
-- Progress fill: light blue (`GColorPictonBlue`). The track outline stays
-  black.
+- Progress fill: two-tone like the battery, a lighter top third
+  (`GColorCeleste`) over light blue (`GColorPictonBlue`); 1 + 2 rows on the
+  144×168 screens, 2 + 3 on Pebble Time 2. The track outline stays black.
 - Battery, after the reference battery (`#626262` frame, `#A5E07F` charge
   under a highlight/shade gradient): dark gray frame (`GColorDarkGray`), and
   a charge that fills the whole interior, light green in the upper half
@@ -163,10 +164,12 @@ All in canvas pixels for the 144×168 screens. Text y values are cap tops,
 and text ink keeps an 8px margin on both sides. W×H is the canvas: 144×168
 portrait, 168×144 landscape.
 
-- Status row 0–32: text cap at y=11, centered on W/2; icons at y=12; speaker
-  x=8 (the connection / quiet-time icon); battery body from W−24 to W−7 (nub
-  2px past it); separator line at
-  y=33.
+- Status row: text cap and icons at y=9 (9px tall, so rows 9–17), time
+  centered on W/2; speaker x=8 (the connection / quiet-time icon); battery
+  body from W−24 to W−7 (nub 2px past it); separator line at y=27. The
+  status content is centered above the separator (9px above, 9px below), and
+  the separator sits midway between it and the date caps (9px / 8px, the
+  nearest whole-pixel fit).
 - Date row: cap at y=36.
 - Spoken time, centered on W/2: the block (hour cap top to AM/PM baseline,
   48px) is centered between y=50 and the track, 2px high, which gives caps
@@ -175,13 +178,18 @@ portrait, 168×144 landscape.
   y=H−20.
 
 These come from measuring the mockup at 1× (Frames 1–2 for portrait, Frame 3
-for landscape). In both orientations every element sits within 1px of the
-mockup (`tools/compare_mock.py`) on flint, and on basalt, diorite and
-aplite.
+for landscape). In both orientations every element from the date row down
+sits within 1px of the mockup (`tools/compare_mock.py`) on flint, and on
+basalt, diorite and aplite. The status row and separator were later moved
+up from the mockup's positions (separator y=33, text y=11) to center the
+status content and even out the gaps around the separator.
 
 Pebble Time 2 uses the same rules with every value scaled by 22/16 and
-rounded (`#if ASSET_LARGE` in `main.c`): 11px margins, separator at y=46,
-13px caps, a 7px-tall track.
+rounded (`#if ASSET_LARGE` in `main.c`): 11px margins, 13px caps, a
+7px-tall track. Its status row follows the same centering rule, and there
+it fits exactly: caps at y=12 (rows 12–24), separator at y=37, date caps at
+y=50, with 12px above the caps, between caps and separator, and between
+separator and date.
 
 ![Mockup vs emulator, portrait](docs/screenshots/portrait/compare_side_by_side.png)
 ![Mockup vs emulator, landscape](docs/screenshots/landscape/compare_side_by_side.png)
@@ -240,6 +248,8 @@ tools/emu.sh start
 tools/screenshot.sh /tmp/shot 15:29:18 10/1/4 1 1 65 0 0 0 0 0
 NODE_PATH=$(npm root -g) node tools/render_mock.js 2026-10-01T15:29:18 /tmp/mock
 python3 tools/compare_mock.py /tmp/mock_portrait_hour.png /tmp/shot_canvas.png /tmp/cmp
+tools/docs_screenshots.sh       # regenerate everything under docs/screenshots/
+tools/store_screenshots.sh      # regenerate store/screenshots/
 # landscape: pass 1 as the last screenshot.sh argument, compare with /tmp/mock_canvas.png
 ```
 
