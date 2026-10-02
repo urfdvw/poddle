@@ -305,6 +305,7 @@ NODE_PATH=$(npm root -g) node tools/render_mock.js 2026-10-01T15:29:18 /tmp/mock
 python3 tools/compare_mock.py /tmp/mock_portrait_hour.png /tmp/shot_canvas.png /tmp/cmp
 tools/docs_screenshots.sh       # regenerate everything under docs/screenshots/
 tools/store_screenshots.sh      # regenerate store/screenshots/
+python3 tools/readme_screenshots.py  # then the upright landscape shots in docs/readme/
 # landscape: pass 1 as the last screenshot.sh argument, compare with /tmp/mock_canvas.png
 ```
 

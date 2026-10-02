@@ -7,9 +7,9 @@ most popular mp3 player in year 2004 (a status bar, an info area and a
 progress bar) and uses it to tell the time.
 
 <p>
-  <img src="store/screenshots/flint_1_portrait.png" height="252" alt="Black and white, Pebble 2 Duo">
+  <img src="docs/readme/landscape_bw.png" height="216" alt="Landscape, black and white (Pebble 2 Duo)">
   &nbsp;&nbsp;
-  <img src="store/screenshots/emery_3_color_portrait.png" height="252" alt="Color theme, Pebble Time 2">
+  <img src="docs/readme/landscape_color.png" height="216" alt="Landscape, color theme (Pebble Time 2)">
 </p>
 
 ## What's on the face
