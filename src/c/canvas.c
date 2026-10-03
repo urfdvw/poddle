@@ -221,6 +221,8 @@ int canvas_digits(const char *text, Glyph *out, int max) {
       index = DIGIT_SLASH;
     } else if (c == '-') {
       index = DIGIT_MINUS;
+    } else if (c == '+') {
+      index = DIGIT_PLUS;
     } else {
       continue;
     }

@@ -21,8 +21,8 @@ progress bar) and uses it to tell the time.
 - **Date**: month/day and the day of the week.
 - **Spoken time**: the time written out in words, such as "Three /
   Twenty-Nine / PM".
-- **Progress bar**: fills up over the current hour or minute, with labels at
-  both ends.
+- **Progress bar**: fills up over the current hour or minute, or toward your
+  daily step goal, with labels at both ends.
 
 ## Settings
 
@@ -30,8 +30,12 @@ Open the watch face's settings in the Pebble app on your phone.
 
 - **Orientation**: portrait (default) or landscape.
 - **Theme**: black & white, or color (color watches only).
-- **Progress bar**: what the bar measures (current minute or current hour),
-  and what its labels show (segment start / end, or elapsed / remaining).
+- **Progress bar**: what the bar measures (current minute, current hour, or
+  steps), and what its labels show (segment start / end, or elapsed /
+  remaining). In **Steps** mode you set a **Target** (8000 by default)
+  instead: the left label is today's steps, the right one how many are left
+  (-) or how far past the target you are (+). Steps needs a watch with
+  Pebble Health, so the original Pebble and Pebble Steel don't offer it.
 - **Custom period**: during a time window you set, the bar runs from your
   start time to your end time instead. It can apply on one date, on chosen
   days of the week, or every day; outside the window the face goes back to

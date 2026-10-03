@@ -40,11 +40,26 @@ module.exports = [
         type: 'heading',
         defaultValue: 'Progress bar'
       },
+      // Steps needs Health, which the original Pebble (aplite) lacks: only
+      // one of these two is shown.
       {
         type: 'select',
         messageKey: 'ProgressMode',
         label: 'Bar measures',
         defaultValue: '1',
+        capabilities: ['HEALTH'],
+        options: [
+          { label: 'Current minute', value: '0' },
+          { label: 'Current hour', value: '1' },
+          { label: 'Steps', value: '2' }
+        ]
+      },
+      {
+        type: 'select',
+        messageKey: 'ProgressMode',
+        label: 'Bar measures',
+        defaultValue: '1',
+        capabilities: ['NOT_HEALTH'],
         options: [
           { label: 'Current minute', value: '0' },
           { label: 'Current hour', value: '1' }
@@ -59,6 +74,14 @@ module.exports = [
           { label: 'Segment start / end', value: '0' },
           { label: 'Elapsed / remaining', value: '1' }
         ]
+      },
+      {
+        type: 'input',
+        messageKey: 'StepTarget',
+        label: 'Target',
+        defaultValue: '8000',
+        description: 'A whole number, 1 or more.',
+        attributes: { type: 'number', min: 1, step: 1 }
       }
     ]
   },

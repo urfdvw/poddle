@@ -130,6 +130,23 @@ only), what the bar measures (minute/hour), what the labels show
 (start-end/elapsed-remaining), a custom period (below), and Battery Saving
 (redraw schedule and period, below).
 
+### Steps mode
+
+**Bar measures: Steps** (Health watches only) fills the bar toward
+**Target** (a whole number, 1 or more, default 8000; blank or invalid input
+falls back to 8000, values are capped at 999999) and stays full past it. The
+left label is today's step count (`health_service_sum_today`), the right
+one the difference: `-N` still to go, `+N` past the target, `0` on it. The
+`+` is a new glyph at the end of the digit sheets.
+
+On the config page the Bar measures select exists twice: the one with
+Steps carries `capabilities: ['HEALTH']`, the other `['NOT_HEALTH']`, so
+aplite (no Health) never offers it, and the watch maps a stray steps value
+to hour mode there. In steps mode the page hides Labels show and shows
+Target (`src/pkjs/index.js`). The face redraws on the minute tick and on
+Health movement updates; it never needs seconds. The app declares the
+`health` capability.
+
 ### Custom period
 
 Between a start and an end time on chosen days, the progress bar runs from

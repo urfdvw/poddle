@@ -57,5 +57,5 @@ void canvas_draw_icon(GContext *ctx, int icon, int x, int y);
 void canvas_draw_gradient(GContext *ctx, GRect r, GColor top, GColor bottom);
 #endif
 
-// Converts a string of "0-9 : / -" into digit glyphs; returns the count.
+// Converts a string of "0-9 : / - +" into digit glyphs; returns the count.
 int canvas_digits(const char *text, Glyph *out, int max);

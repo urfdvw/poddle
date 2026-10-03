@@ -41,6 +41,7 @@ enum {
   DIGIT_COLON = 10,
   DIGIT_SLASH = 11,
   DIGIT_MINUS = 12,
+  DIGIT_PLUS = 13,
   DIGIT_COUNT
 };
 
@@ -113,6 +114,7 @@ static const SheetEntry ASSET_DIGIT_ENTRIES_BASE[DIGIT_COUNT] = {
   {   97, 0,   4,  9,  0,   4,  0,  2 },  // :
   {  101, 0,   8,  9,  0,   8,  0,  2 },  // /
   {  109, 0,   8,  9,  0,   8,  1,  2 },  // -
+  {  117, 0,  10,  9,  0,  10,  0,  2 },  // +
 };
 static const SheetEntry ASSET_WDAY_ENTRIES_BASE[WDAY_COUNT] = {
   {    0, 0,  19,  9,  0,  19,  0,  2 },  // Su
@@ -185,6 +187,7 @@ static const SheetEntry ASSET_DIGIT_ENTRIES_LARGE[DIGIT_COUNT] = {
   {  135, 0,   6, 13,  0,   6,  0,  3 },  // :
   {  141, 0,  12, 13, -1,  11, -1,  4 },  // /
   {  153, 0,  11, 13,  0,  11,  1,  3 },  // -
+  {  164, 0,  14, 13,  0,  14,  0,  3 },  // +
 };
 static const SheetEntry ASSET_WDAY_ENTRIES_LARGE[WDAY_COUNT] = {
   {    0, 0,  26, 13,  0,  26,  0,  3 },  // Su
